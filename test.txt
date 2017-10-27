@@ -1,0 +1,26 @@
+// print hello world
+//&T+
+begin
+  var a : integer;
+  var b : real;
+  print "hello wor""ld";
+  a := 1+0;
+  b := 1.23;""""08801
+  if a > 01 then
+    b := b*1.23e-1;
+    a := 123e00;
+  end if
+end
+09"9"9"9"9"9"
+000
+
+
+//111111111
+//&S-
+//222222222
+//&S+
+//333333333
+
+01.202
+12e-0021
+7
