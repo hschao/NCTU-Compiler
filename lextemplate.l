@@ -74,7 +74,7 @@ letter [a-zA-Z]
 
 {digit}+\.{digit}+ { tokenString("float", yytext); return FLOAT; }
 
-({digit}+(\.{digit}+)?)[Ee][+-]?({digit}+) { tokenString("scientific", yytext); return SCIENTIFIC}
+({digit}+(\.{digit}+)?)[Ee][+-]?({digit}+) { tokenString("scientific", yytext); return SCIENTIFIC;}
 
 "\"" { LIST; BEGIN STR; }
 

@@ -8,7 +8,10 @@ extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
 %}
 
-%token SEMICOLON KW_END IDENT
+%token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
+%token ADD SUB MUL DIV MOD ASSIGN LESS LESS_EQU NOT_EQU GREAT_EQU GREAT EQU AND OR NOT
+%token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FALSE KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_TRUE KW_RETURN KW_VAR KW_WHILE
+%token IDENT OCT_INTEGER INTEGER FLOAT SCIENTIFIC STRING
 
 %%
 
@@ -17,8 +20,9 @@ program
  ;
 
 programbody
- : var_constant_declaration function_declaration compound_statement
+ : var_constant_declarations function_declarations compound_statement
  ;
+
 
 
 function
@@ -39,6 +43,42 @@ argument
  : identifier_list COLON type
  ;
 
+
+
+variable_declaration
+ : KW_VAR identifier_list COLON type SEMICOLON
+ ;
+
+constant_declaration
+ : KW_VAR identifier_list COLON literal_constant SEMICOLON
+ ;
+
+literal_constant
+ : integer_constant
+ | STRING
+ | SCIENTIFIC
+ | FLOAT
+ ;
+
+
+
+type
+ : scalar_type
+ | KW_ARRAY integer_constant KW_TO integer_constant KW_OF type
+ ;
+
+integer_constant
+ : INTEGER
+ | OCT_INTEGER
+ ;
+
+scalar_type
+ : KW_INTEGER
+ | KW_REAL
+ | KW_STRING
+ | KW_BOOLEAN
+ ;
+
 identifier_list
  : identifier_list COMMA IDENT
  | IDENT
@@ -51,12 +91,12 @@ empty
 
 int yyerror( char *msg )
 {
-        fprintf( stderr, "\n|--------------------------------------------------------------------------\n" );
+    fprintf( stderr, "\n|--------------------------------------------------------------------------\n" );
     fprintf( stderr, "| Error found in Line #%d: %s\n", linenum, buf );
     fprintf( stderr, "|\n" );
     fprintf( stderr, "| Unmatched token: %s\n", yytext );
-        fprintf( stderr, "|--------------------------------------------------------------------------\n" );
-        exit(-1);
+    fprintf( stderr, "|--------------------------------------------------------------------------\n" );
+    exit(-1);
 }
 
 int  main( int argc, char **argv )
