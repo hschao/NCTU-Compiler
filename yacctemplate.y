@@ -20,6 +20,33 @@ programbody
  : var_constant_declaration function_declaration compound_statement
  ;
 
+
+function
+ : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON compound_statement KW_END IDENT
+ ; 
+
+arguments
+ : empty
+ | arg_list
+ ;
+
+argument_list
+ : argument_list SEMICOLON argument
+ | argument
+ ;
+
+argument
+ : identifier_list COLON type
+ ;
+
+identifier_list
+ : identifier_list COMMA IDENT
+ | IDENT
+
+empty
+ :
+ ;
+
 %%
 
 int yyerror( char *msg )
