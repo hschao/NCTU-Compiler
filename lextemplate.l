@@ -20,52 +20,52 @@ letter [a-zA-Z]
 
 %%
 
-","     { tokenChar(yytext[0]); }
-";"     { tokenChar(yytext[0]); }
-":"     { tokenChar(yytext[0]); }
-"("     { tokenChar(yytext[0]); }
-")"     { tokenChar(yytext[0]); }
-"["     { tokenChar(yytext[0]); }
-"]"     { tokenChar(yytext[0]); }
+","     { tokenChar(yytext[0]); return COMMA;}
+";"     { tokenChar(yytext[0]); return SEMICOLON;}
+":"     { tokenChar(yytext[0]); return COLON;}
+"("     { tokenChar(yytext[0]); return L_PAREN;}
+")"     { tokenChar(yytext[0]); return R_PAREN;}
+"["     { tokenChar(yytext[0]); return L_BRACKET;}
+"]"     { tokenChar(yytext[0]); return R_BRACKET;}
 
-"+"     { tokenChar('+'); }
-"-"     { tokenChar('-'); }
-"*"     { tokenChar('*'); }
-"/"     { tokenChar('/'); }
-"mod"   { token(mod); }
-":="    { token(:=); }
-"<"     { tokenChar('<'); }
-"<="    { token(<=); }
-"<>"    { token(<>); }
-">="    { token(>=); }
-">"     { tokenChar('>'); }
-"="     { tokenChar('='); }
-"and"   { token(and); }
-"or"    { token(or); }
-"not"   { token(not); }
+"+"     { tokenChar('+'); return ADD;}
+"-"     { tokenChar('-'); return SUB;}
+"*"     { tokenChar('*'); return MUL;}
+"/"     { tokenChar('/'); return DIV;}
+"mod"   { token(mod); return MOD;}
+":="    { token(:=); return ASSIGN;}
+"<"     { tokenChar('<'); return LESS;}
+"<="    { token(<=); return LESS_EQU;}
+"<>"    { token(<>); return NOT_EQU;}
+">="    { token(>=); return GREAT_EQU;}
+">"     { tokenChar('>'); return GREAT;}
+"="     { tokenChar('='); return EQU;}
+"and"   { token(and); return AND;}
+"or"    { token(or); return OR;}
+"not"   { token(not); return NOT;}
 
-"array"   { token(KWarray); }
-"begin"   { token(KWbegin); }
-"boolean" { token(KWboolean); }
-"def"     { token(KWdef); }
-"do"      { token(KWdo); }
-"else"    { token(KWelse); }
-"end"     { token(KWend); }
-"false"   { token(KWfalse); }
-"for"     { token(KWfor); }
-"integer" { token(KWinteger); }
-"if"      { token(KWif); }
-"of"      { token(KWof); }
-"print"   { token(KWprint); }
-"read"    { token(KWread); }
-"real"    { token(KWreal); }
-"string"  { token(KWstring); }
-"then"    { token(KWthen); }
-"to"      { token(KWto); }
-"true"    { token(KWtrue); }
-"return"  { token(KWreturn); }
-"var"     { token(KWvar); }
-"while"   { token(KWwhile); }
+"array"   { token(KWarray); return KW_array; }
+"begin"   { token(KWbegin); return KW_begin; }
+"boolean" { token(KWboolean); return KW_boolean; }
+"def"     { token(KWdef); return KW_def; }
+"do"      { token(KWdo); return KW_do; }
+"else"    { token(KWelse); return KW_else; }
+"end"     { token(KWend); return KW_end; }
+"false"   { token(KWfalse); return KW_false; }
+"for"     { token(KWfor); return KW_for; }
+"integer" { token(KWinteger); return KW_integer; }
+"if"      { token(KWif); return KW_if; }
+"of"      { token(KWof); return KW_of; }
+"print"   { token(KWprint); return KW_print; }
+"read"    { token(KWread); return KW_read; }
+"real"    { token(KWreal); return KW_real; }
+"string"  { token(KWstring); return KW_string; }
+"then"    { token(KWthen); return KW_then; }
+"to"      { token(KWto); return KW_to; }
+"true"    { token(KWtrue); return KW_true; }
+"return"  { token(KWreturn); return KW_return; }
+"var"     { token(KWvar); return KW_var; }
+"while"   { token(KWwhile); return KW_while; }
 
 {letter}({digit}|{letter})*  { tokenString("id", yytext); }
 
