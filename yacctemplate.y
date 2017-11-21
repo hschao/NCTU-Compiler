@@ -58,6 +58,23 @@ literal_constant
  | STRING
  | SCIENTIFIC
  | FLOAT
+ | KW_TRUE | KW_FALSE
+ ;
+
+
+
+compound_statement
+ : KW_BEGIN
+     var_constant_declarations
+     zero_more_statements
+   KW_END
+ ;
+
+simple_statement
+ : variable_reference ASSIGN expression SEMICOLON
+ | KW_PRINT variable_reference
+ | KW_PRINT expression
+ | KW_READ variable_reference
  ;
 
 
