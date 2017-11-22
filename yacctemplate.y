@@ -1,4 +1,4 @@
-%{
+g%{
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,6 +13,14 @@ extern char buf[256];           /* declared in lex.l */
 %token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FALSE KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_TRUE KW_RETURN KW_VAR KW_WHILE
 %token IDENT OCT_INTEGER INTEGER FLOAT SCIENTIFIC STRING
 
+
+%left OR
+%left AND
+%left NOT
+%left GREAT GREAT_EQU EQU LESS_EQU LESS NOT_EQU
+%left ADD SUB
+%left MUL DIV MOD
+%left
 %%
 
 program 
@@ -72,12 +80,38 @@ compound_statement
 
 simple_statement
  : variable_reference ASSIGN expression SEMICOLON
- | KW_PRINT variable_reference
- | KW_PRINT expression
- | KW_READ variable_reference
+ | KW_PRINT variable_reference SEMICOLON
+ | KW_PRINT expression SEMICOLON
+ | KW_READ variable_reference SEMICOLON
  ;
 
+expression
+ : operand operator_arithmetic operand
+ | operand operator_compare operand
+ | operand operator_logical operand
+ | SUB operand
+ | NOT operand
+ | L_PAREN expression R_PAREN
+ ;
 
+operand 
+ : expression
+ | variable_reference
+ | literal_constant
+ | function_invocation
+ ;
+
+operator_logical
+ : OR | AND
+ ;
+
+operator_compare
+ : GREAT | GREAT_EQU | EQU | LESS_EQU | LESS | NOT_EQU
+ ;
+
+operator_arithmetic
+ : ADD | SUB | MUL | DIV | MOD
+ ;
 
 type
  : scalar_type
