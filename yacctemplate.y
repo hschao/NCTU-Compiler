@@ -1,4 +1,4 @@
-g%{
+%{
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,9 +20,9 @@ extern char buf[256];           /* declared in lex.l */
 %left GREAT GREAT_EQU EQU LESS_EQU LESS NOT_EQU
 %left ADD SUB
 %left MUL DIV MOD
-%left
 %%
 
+/* program */
 program 
  : IDENT SEMICOLON programbody KW_END IDENT
  ;
@@ -31,15 +31,27 @@ programbody
  : var_constant_declarations function_declarations compound_statement
  ;
 
+var_constant_declarations
+ : empty
+ | var_constant_declarations variable_declaration
+ | var_constant_declarations constant_declaration
+ ;
+
+function_declarations
+ : empty
+ | function_declarations function_declaration
+ ;
 
 
-function
+
+/* function */
+function_declaration
  : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON compound_statement KW_END IDENT
  ; 
 
 arguments
  : empty
- | arg_list
+ | argument_list
  ;
 
 argument_list
@@ -69,12 +81,31 @@ literal_constant
  | KW_TRUE | KW_FALSE
  ;
 
+/* statements */
+statements
+ : empty
+ | statement_list
+ ;
 
+statement_list
+ : statement_list statement
+ | statement
+ ;
+
+statement
+ : compound_statement
+ | simple_statement
+ | conditional_statement
+ | while_statement
+ | for_statement
+ | return_statement
+ | function_invocation_statement
+ ;
 
 compound_statement
  : KW_BEGIN
      var_constant_declarations
-     zero_more_statements
+     statements
    KW_END
  ;
 
@@ -85,18 +116,59 @@ simple_statement
  | KW_READ variable_reference SEMICOLON
  ;
 
+conditional_statement 
+ : KW_IF boolean_expr KW_THEN statements KW_ELSE statements KW_END KW_IF
+ | KW_IF boolean_expr KW_THEN statements KW_END KW_IF
+ ;
+
+while_statement 
+ : KW_WHILE boolean_expr KW_DO statements KW_END KW_DO
+ ;
+
+for_statement 
+ : KW_FOR IDENT ASSIGN integer_constant KW_TO integer_constant KW_DO statements KW_END KW_DO
+ ;
+
+return_statement 
+ : KW_RETURN expression SEMICOLON
+ ;
+
+function_invocation_statement
+ : function_invocation SEMICOLON
+ ;
+
+
+/* common grammar */
+expressions
+ : empty
+ | expression_list
+ ;
+
+expression_list
+ : expression_list SEMICOLON expression
+ | expression
+ ;
+
 expression
- : operand operator_arithmetic operand
- | operand operator_compare operand
- | operand operator_logical operand
- | SUB operand
- | NOT operand
+ : operand
+ | expression operator_arithmetic expression
+ | expression operator_compare expression
+ | expression operator_logical expression
+ | SUB expression %prec MUL
+ | NOT expression
  | L_PAREN expression R_PAREN
  ;
 
-operand 
+boolean_expr
  : expression
- | variable_reference
+ ;
+
+integer_expr
+ : expression
+ ;
+
+operand 
+ : variable_reference
  | literal_constant
  | function_invocation
  ;
@@ -111,6 +183,19 @@ operator_compare
 
 operator_arithmetic
  : ADD | SUB | MUL | DIV | MOD
+ ;
+
+function_invocation
+ : IDENT L_PAREN expressions R_PAREN
+ ;
+
+variable_reference
+ : IDENT reference_list
+ ;
+
+reference_list
+ : reference_list L_BRACKET integer_expr R_BRACKET
+ | empty
  ;
 
 type

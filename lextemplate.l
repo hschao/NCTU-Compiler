@@ -1,4 +1,6 @@
 %{
+#include "y.tab.h"
+
 #define LIST               strcat(buf, yytext)
 #define token(t)           {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenChar(t)       {LIST; if (Opt_T) printf("<%c>\n", (t));}
