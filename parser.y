@@ -75,10 +75,13 @@ constant_declaration
  ;
 
 literal_constant
- : integer_constant
- | STRING
+ : STRING
+ | integer_constant
  | SCIENTIFIC
  | FLOAT
+ | SUB integer_constant
+ | SUB SCIENTIFIC
+ | SUB FLOAT
  | KW_TRUE | KW_FALSE
  ;
 
@@ -155,7 +158,6 @@ expression
  | expression operator_arithmetic expression
  | expression operator_compare expression
  | expression operator_logical expression
- | SUB expression %prec MUL
  | NOT expression
  | L_PAREN expression R_PAREN
  ;
