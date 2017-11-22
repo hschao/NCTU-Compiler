@@ -145,7 +145,7 @@ expressions
  ;
 
 expression_list
- : expression_list SEMICOLON expression
+ : expression_list COMMA expression
  | expression
  ;
 
