@@ -47,6 +47,7 @@ function_declarations
 /* function */
 function_declaration
  : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON compound_statement KW_END IDENT
+ | IDENT L_PAREN arguments R_PAREN SEMICOLON compound_statement KW_END IDENT
  ; 
 
 arguments
