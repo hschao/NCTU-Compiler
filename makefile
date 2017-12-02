@@ -5,7 +5,15 @@ else ifeq ($(UNAME), Darwin)
 	GCC_EXTRA_PARAM := -ll
 endif
 
-all: parser
+TARGET_NAME := parser
+
+all: parser clean
+
+clean:
+	rm lex.yy.c
+	rm y.output
+	rm y.tab.c
+	rm y.tab.h
 
 y.tab.c: parser.y
 	yacc -d -v parser.y
@@ -17,4 +25,4 @@ y.tab.h: parser.y
 	yacc -d -v parser.y
 
 parser: lex.yy.c y.tab.c y.tab.h
-	gcc y.tab.c lex.yy.c -o parser.out -ly $(GCC_EXTRA_PARAM)
+	gcc y.tab.c lex.yy.c -o $(TARGET_NAME) -ly $(GCC_EXTRA_PARAM)
