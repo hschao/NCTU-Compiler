@@ -1,6 +1,12 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
+#include "symbol.h"
+
+using namespace std;
+
+vector<SymbolTable> symTable;
 
 extern int linenum;             /* declared in lex.l */
 extern FILE *yyin;              /* declared by lex */
@@ -16,7 +22,6 @@ int yyerror( char *msg );
 %token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FALSE KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_TRUE KW_RETURN KW_VAR KW_WHILE
 %token IDENT OCT_INTEGER INTEGER FLOAT SCIENTIFIC STRING
 
-
 %left OR
 %left AND
 %left NOT
@@ -27,11 +32,11 @@ int yyerror( char *msg );
 
 /* program */
 program 
- : IDENT SEMICOLON programbody KW_END IDENT
+ : IDENT SEMICOLON {printf("!!!MIDDLE OF program\n");} programbody KW_END IDENT
  ;
 
 programbody
- : var_constant_declarations function_declarations compound_statement
+ : var_constant_declarations function_declarations compound_statement {printf("!!!END OF programbody\n");}
  ;
 
 var_constant_declarations

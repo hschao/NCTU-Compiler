@@ -1,19 +1,16 @@
-typedef struct _ListNode {
-  void* data;
-  struct _ListNode* next;
-} ListNode;
+#include <vector>
 
 typedef enum _Kind {
-  PROG, FUNC, PARAM, VAR, CONSTANT
+  K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST
 } Kind;
 
 typedef enum _TypeName {
-  INTEGER, REAL, BOOLEAN, STRING, ARRAY;
+  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_ARRAY
 } TypeName;
 
 typedef struct _ArrayInfo {
   TypeName typeName;
-  ListNode* dimLst;
+  std::vector<int> dimensions;
 } ArrayInfo;
 
 typedef struct _Type {
@@ -22,24 +19,27 @@ typedef struct _Type {
 } Type;
 
 typedef union _Attr {
-  union constant {
+  union {
     int integer;
     float real;
     bool bl;
     char* str; 
-  }, 
-  ListNode* paramLst;
+  } constant;
+  std::vector<Type>* paramLst;
 } Attr;
 
-typedef struct _SymbolTableEntry {
+class SymbolTableEntry {
+public:
   char name[35];
   Kind kind;
   Type type;
-  struct _SymbolTableEntry* next;
-} SymbolTableEntry;
+  Attr attr;
+};
 
-typedef struct {
-  SymbolTableEntry* head;
-  unsigned int level, size;
-} SymbolTable;
+class SymbolTable {
+public:
+  SymbolTable(int level);
+  std::vector<SymbolTableEntry> entries;
+  int level, size;
+};
 
