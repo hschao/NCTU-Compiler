@@ -6,6 +6,9 @@ extern int linenum;             /* declared in lex.l */
 extern FILE *yyin;              /* declared by lex */
 extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
+
+int yylex();
+int yyerror( char *msg );
 %}
 
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET

@@ -25,4 +25,4 @@ y.tab.h: parser.y
 	yacc -d -v parser.y
 
 parser: lex.yy.c y.tab.c y.tab.h
-	gcc y.tab.c lex.yy.c -o $(TARGET_NAME) -ly $(GCC_EXTRA_PARAM)
+	g++ y.tab.c lex.yy.c -o $(TARGET_NAME) -ly $(GCC_EXTRA_PARAM)
