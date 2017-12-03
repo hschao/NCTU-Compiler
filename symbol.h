@@ -30,6 +30,8 @@ typedef union _Attr {
 
 class SymbolTableEntry {
 public:
+  SymbolTableEntry();
+  ~SymbolTableEntry();
   char name[35];
   Kind kind;
   Type type;
@@ -39,7 +41,8 @@ public:
 class SymbolTable {
 public:
   SymbolTable(int level);
+  void addEntry();
   std::vector<SymbolTableEntry> entries;
-  int level, size;
+  int level;
 };
 
