@@ -130,7 +130,7 @@ char* SymbolTable::TypeToString(char* buf, Type t) {
   if (isArray) {
     for(int j=0; j<t.dimensions.size(); j++) {
       int dim = t.dimensions[j];
-      sprintf(buf+i, "[%d]", dim);
+      i += sprintf(buf+i, "[%d]", dim);
     }
   }
   return buf;
