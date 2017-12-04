@@ -27,7 +27,7 @@ int yyerror( char *msg );
 %type <ids> identifier_list
 %type <typeID> scalar_type
 %type <type> type
-
+%type <args> arguments argument_list argument
 
 %left OR
 %left AND
@@ -63,26 +63,42 @@ function_declarations
 function_declaration
  : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON 
     { 
+        symTable.back().addFunction($1, $3, $6);
+
+        // Create new symbol table.
         push_SymbolTable(); 
         ignoreNextCompound=true; 
     }    
     compound_statement 
    KW_END IDENT
- | IDENT L_PAREN arguments R_PAREN SEMICOLON compound_statement KW_END IDENT
+ | IDENT L_PAREN arguments R_PAREN SEMICOLON 
+    { 
+        Type t;
+        t.typeID = T_NONE;
+        symTable.back().addFunction($1, $3, t);
+
+        // Create new symbol table.
+        push_SymbolTable(); 
+        ignoreNextCompound=true; 
+    }    
+    compound_statement
+   KW_END IDENT
  ; 
 
 arguments
  : empty
- | argument_list
+ | argument_list { 
+    $$ = $1;
+   }
  ;
 
 argument_list
- : argument_list SEMICOLON argument
- | argument
+ : argument_list SEMICOLON argument { $$=$1; $$.insert( $$.end(), $3.begin(), $3.end() ); }
+ | argument { $$=$1; }
  ;
 
 argument
- : identifier_list COLON type
+ : identifier_list COLON type { for(int i=0; i<$1.size(); i++) $$.push_back($3); }
  ;
 
 

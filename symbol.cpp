@@ -1,8 +1,9 @@
 #include "symbol.h"
+using namespace std;
 
-std::vector<SymbolTable> symTable;
+vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
-const char* typeToStr[] = {"integer", "real", "boolean", "string"};
+const char* typeToStr[] = {"integer", "real", "boolean", "string", "void"};
 
 SymbolTable::SymbolTable(int level) {
   this->level = level;
@@ -39,16 +40,15 @@ void SymbolTable::PrintTable() {
     TypeToString(buf, entries[i].type);
     printf("%-17s", buf);  
 
-
     // Attribute
     std::string output;
     if (entries[i].kind == K_FUNC) {
       if (entries[i].attr.paramLst.size() > 0) {
         std::vector<Type> v = entries[i].attr.paramLst;
         output = TypeToString(buf, v[0]);
-        for(i=1; i<v.size(); i++) {
+        for(int k=1; k<v.size(); k++) {
           output += ", " ;
-          output += TypeToString(buf, v[i]);
+          output += TypeToString(buf, v[k]);
         }
         printf("%-11s", output.c_str());
       }
@@ -71,7 +71,7 @@ void SymbolTable::PrintTable() {
   printf("\n");
 }
 
-void SymbolTable::addConstants(std::vector<std::string> &ids, Variant value) {
+void SymbolTable::addConstants(vector<string> &ids, Variant value) {
   for(int i=0; i<ids.size(); i++) {
     SymbolTableEntry ste;
     strncpy(ste.name, ids[i].c_str(), 32);
@@ -83,7 +83,7 @@ void SymbolTable::addConstants(std::vector<std::string> &ids, Variant value) {
   }
 }
 
-void SymbolTable::addVariables(std::vector<std::string> &ids, Type t) {
+void SymbolTable::addVariables(vector<string> &ids, Type t) {
   for(int i=0; i<ids.size(); i++) {
     SymbolTableEntry ste;
     strncpy(ste.name, ids[i].c_str(), 32);
@@ -91,6 +91,15 @@ void SymbolTable::addVariables(std::vector<std::string> &ids, Type t) {
     ste.type = t;
     entries.push_back(ste);
   }
+}
+
+void SymbolTable::addFunction(string id, vector<Type> &paramLst, Type retType) {
+  SymbolTableEntry ste;
+  strncpy(ste.name, id.c_str(), 32);
+  ste.kind = K_FUNC;
+  ste.type = retType;
+  ste.attr.paramLst = paramLst;
+  entries.push_back(ste);
 }
 
 char* SymbolTable::TypeToString(char* buf, Type t) {
