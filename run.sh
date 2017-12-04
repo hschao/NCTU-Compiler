@@ -1,19 +1,12 @@
-# Compile yacc and lex
-yacc -d -v parser.y
-lex scanner.l
-gcc y.tab.c lex.yy.c -ly -ll -o parser.out
-
-# Remove useless files
-rm y.tab.*
-rm y.output
-rm lex.yy.c
+# Compile
+make
 
 # Testing
 printf "\n\nStart testing.\n"
-TEST_FILE="test.p"
-./parser.out TestCase/Project2/$TEST_FILE >> ans.log 2>&1
+TEST_FILE="basic"
+./parser TestCase/Project3/Examples/$TEST_FILE.p >> ans.log 2>&1
 
-DIFF_RESULT=$(diff ans.log TestCase/Project2/ExAns/r$TEST_FILE)
+DIFF_RESULT=$(diff -u ans.log TestCase/Project3/Answers/$TEST_FILE.txt)
 if [ "$DIFF_RESULT" = "" ]; then
     printf "Your answer is correct!\n"
 else
@@ -21,6 +14,6 @@ else
     printf "\nYour answer:\n"
     cat ans.log
     printf "\nExample answer:\n"
-    cat TestCase/Project2/ExAns/r$TEST_FILE
+    cat TestCase/Project3/Answers/$TEST_FILE.txt
 fi
 rm ans.log
