@@ -1,5 +1,5 @@
 %{
-#include "symbol.h"
+#include "main.h"
 #include "y.tab.h"
 
 #define LIST               strcat(buf, yytext)

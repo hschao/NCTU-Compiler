@@ -1,9 +1,5 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <vector>
-#include "symbol.h"
-
+#include "main.h"
 using namespace std;
 
 extern int linenum;             /* declared in lex.l */
@@ -20,15 +16,6 @@ int yylex();
 int yyerror( char *msg );
 %}
 
-
-%union {
-    int intValue;
-    double doubleValue;
-    bool boolValue;
-    char *stringValue;
-    Variant variant;
-}
-
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
 %token ADD SUB MUL DIV MOD ASSIGN LESS LESS_EQU NOT_EQU GREAT_EQU GREAT EQU AND OR NOT
 %token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_RETURN KW_VAR KW_WHILE
@@ -39,6 +26,7 @@ int yyerror( char *msg );
 
 %type <variant> literal_constant
 %type <intValue> integer_constant
+%type <ids> identifier_list
 
 
 %left OR
@@ -108,8 +96,7 @@ variable_declaration
 
 constant_declaration
  : KW_VAR identifier_list COLON literal_constant SEMICOLON {
-        symTable.back().addConstants(ids, $4);
-        ids.clear();
+        symTable.back().addConstants($2, $4);
    }
  ;
 
@@ -261,8 +248,8 @@ scalar_type
  ;
 
 identifier_list
- : identifier_list COMMA IDENT { ids.push_back($3); }
- | IDENT { ids.push_back($1); }
+ : identifier_list COMMA IDENT { $$=$1; $$.push_back($3); }
+ | IDENT { $$.push_back($1); }
 
 empty
  :
