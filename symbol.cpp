@@ -1,7 +1,8 @@
 #include "symbol.h"
 
 std::vector<SymbolTable> symTable;
-const char* lookUp[] = {"program", "function", "parameter", "variable", "constant", "integer", "real", "boolean", "string"};
+const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
+const char* typeToStr[] = {"integer", "real", "boolean", "string"};
 
 SymbolTable::SymbolTable(int level) {
   this->level = level;
@@ -28,7 +29,7 @@ void SymbolTable::PrintTable() {
     printf("%-33s", entries[i].name);
 
     // Kind
-    printf("%-11s", lookUp[entries[i].kind]);
+    printf("%-11s", kindToStr[entries[i].kind]);
     
     // Level
     printf("%d%-10s", level, (level==0? "(global)": "(local)"));
@@ -70,14 +71,34 @@ void SymbolTable::PrintTable() {
   printf("\n");
 }
 
-void SymbolTable::addConstants(std::vector<std::string> &ids, Type &t, Variant value) {
+void SymbolTable::addConstants(std::vector<std::string> &ids, Variant value) {
+  for(int i=0; i<ids.size(); i++) {
+    SymbolTableEntry ste;
+    strcpy(ste.name, ids[i].c_str());
+    ste.kind = K_CONST;
+    ste.type.typeID = value.typeID;
+    ste.type.dimensions.clear();
+    ste.attr.constant = value;
+    entries.push_back(ste);
+  }
+}
 
+void SymbolTable::addVariables(std::vector<std::string> &ids, Type t) {
+  // for(int i=0; i<ids.size(); i++) {
+  //   SymbolTableEntry ste;
+  //   strcpy(ste.name, ids[i].c_str());
+  //   ste.kind = K_CONST;
+  //   ste.type.typeID = value.typeID;
+  //   ste.type.dimensions.clear();
+  //   ste.attr.constant = value;
+  //   entries.push_back(ste);
+  // }
 }
 
 char* SymbolTable::TypeToString(char* buf, Type t) {
 
   bool isArray = (t.dimensions.size() > 0);
-  int i = sprintf(buf, isArray? "%s ": "%s", lookUp[t.typeID]);
+  int i = sprintf(buf, isArray? "%s ": "%s", typeToStr[t.typeID]);
   if (isArray) {
     for(int j=0; j<t.dimensions.size(); j++) {
       int dim = t.dimensions[j];

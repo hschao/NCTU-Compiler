@@ -20,10 +20,26 @@ int yylex();
 int yyerror( char *msg );
 %}
 
+
+%union {
+    int intValue;
+    double doubleValue;
+    bool boolValue;
+    char *stringValue;
+    Variant variant;
+}
+
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
 %token ADD SUB MUL DIV MOD ASSIGN LESS LESS_EQU NOT_EQU GREAT_EQU GREAT EQU AND OR NOT
-%token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FALSE KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_TRUE KW_RETURN KW_VAR KW_WHILE
-%token IDENT OCT_INTEGER INTEGER FLOAT SCIENTIFIC STRING
+%token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_RETURN KW_VAR KW_WHILE
+%token <stringValue> IDENT STRING
+%token <intValue> OCT_INTEGER INTEGER
+%token <doubleValue> FLOAT SCIENTIFIC 
+%token <boolValue>  KW_TRUE KW_FALSE
+
+%type <variant> literal_constant
+%type <intValue> integer_constant
+
 
 %left OR
 %left AND
@@ -84,26 +100,29 @@ argument
 
 
 variable_declaration
- : KW_VAR identifier_list COLON type SEMICOLON
+ : KW_VAR identifier_list COLON type SEMICOLON {
+       // symTable.back().addConstants(ids, lastType);
+       // ids.clear();
+   }
  ;
 
 constant_declaration
  : KW_VAR identifier_list COLON literal_constant SEMICOLON {
-        
+        symTable.back().addConstants(ids, $4);
         ids.clear();
    }
  ;
 
 literal_constant
- : STRING { lastType.typeID = T_STRING; }
- | integer_constant { lastType.typeID = T_INTEGER; }
- | SCIENTIFIC { lastType.typeID = T_REAL; }
- | FLOAT { lastType.typeID = T_REAL; }
- | SUB integer_constant { lastType.typeID = T_INTEGER; }
- | SUB SCIENTIFIC { lastType.typeID = T_REAL; }
- | SUB FLOAT { lastType.typeID = T_REAL; }
- | KW_TRUE { lastType.typeID = T_BOOLEAN; }
- | KW_FALSE { lastType.typeID = T_BOOLEAN; }
+ : STRING { $$.typeID = T_STRING; $$.str=$1; }
+ | integer_constant { $$.typeID = T_INTEGER; $$.integer=$1; }
+ | SCIENTIFIC { $$.typeID = T_REAL; $$.real=$1; }
+ | FLOAT { $$.typeID = T_REAL; $$.real=$1; }
+ | SUB integer_constant { $$.typeID = T_INTEGER; $$.integer=-$2; }
+ | SUB SCIENTIFIC { $$.typeID = T_REAL; $$.real=-$2; }
+ | SUB FLOAT { $$.typeID = T_REAL; $$.real=-$2; }
+ | KW_TRUE { $$.typeID = T_BOOLEAN; $$.bl=$1; }
+ | KW_FALSE { $$.typeID = T_BOOLEAN; $$.bl=$1; }
  ;
 
 /* statements */
@@ -230,20 +249,20 @@ type
  ;
 
 integer_constant
- : INTEGER
- | OCT_INTEGER
+ : INTEGER { $$=$1; }
+ | OCT_INTEGER { $$=$1; }
  ;
 
 scalar_type
- : KW_INTEGER
+ : KW_INTEGER 
  | KW_REAL
  | KW_STRING
  | KW_BOOLEAN
  ;
 
 identifier_list
- : identifier_list COMMA IDENT { /* ids.push_back($3); */ }
- | IDENT { /* ids.push_back($1); */ }
+ : identifier_list COMMA IDENT { ids.push_back($3); }
+ | IDENT { ids.push_back($1); }
 
 empty
  :

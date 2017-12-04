@@ -3,11 +3,11 @@
 #include <iostream>
 
 typedef enum {
-  K_PROG=0, K_FUNC, K_PARAM, K_VAR, K_CONST
+  K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST
 } Kind;
 
 typedef enum {
-  T_INTEGER=5, T_REAL, T_BOOLEAN, T_STRING
+  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING
 } TypeID;
 
 typedef struct {
@@ -15,11 +15,12 @@ typedef struct {
   std::vector<int> dimensions;
 } Type;
 
-typedef union {
-    int integer;
-    float real;
-    bool bl;
-    char* str; 
+typedef struct {
+  TypeID typeID;
+  int integer;
+  double real;
+  bool bl;
+  char* str;  
 } Variant;
 
 typedef struct {
@@ -43,7 +44,9 @@ public:
   SymbolTable() {};
   SymbolTable(int level);
   void PrintTable();
-  void addConstants(std::vector<std::string> &ids, Type &t, Variant value);
+  void addConstants(std::vector<std::string> &ids, Variant value);
+  void addVariables(std::vector<std::string> &ids, Type t);
+
   std::vector<SymbolTableEntry> entries;
   int level;
 private:

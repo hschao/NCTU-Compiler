@@ -1,4 +1,5 @@
 %{
+#include "symbol.h"
 #include "y.tab.h"
 
 #define LIST               strcat(buf, yytext)
@@ -54,7 +55,7 @@ letter [a-zA-Z]
 "do"      { token(KWdo); return KW_DO; }
 "else"    { token(KWelse); return KW_ELSE; }
 "end"     { token(KWend); return KW_END; }
-"false"   { token(KWfalse); return KW_FALSE; }
+"false"   { token(KWfalse); yylval.boolValue=false; return KW_FALSE; }
 "for"     { token(KWfor); return KW_FOR; }
 "integer" { token(KWinteger); return KW_INTEGER; }
 "if"      { token(KWif); return KW_IF; }
@@ -65,19 +66,19 @@ letter [a-zA-Z]
 "string"  { token(KWstring); return KW_STRING; }
 "then"    { token(KWthen); return KW_THEN; }
 "to"      { token(KWto); return KW_TO; }
-"true"    { token(KWtrue); return KW_TRUE; }
+"true"    { token(KWtrue); yylval.boolValue=true; return KW_TRUE; }
 "return"  { token(KWreturn); return KW_RETURN; }
 "var"     { token(KWvar); return KW_VAR; }
 "while"   { token(KWwhile); return KW_WHILE; }
 
-{letter}({digit}|{letter})*  { tokenString("id", yytext); return IDENT; }
+{letter}({digit}|{letter})*  { tokenString("id", yytext); yylval.stringValue=strdup(yytext); return IDENT; }
 
-0[0-7]+ { tokenString("oct_integer", yytext); return OCT_INTEGER; }
-((0)|([1-9]{digit}*)) { tokenString("integer", yytext); return INTEGER; }
+0[0-7]+ { tokenString("oct_integer", yytext); sscanf(yytext, "%o", &yylval.intValue); return OCT_INTEGER; }
+((0)|([1-9]{digit}*)) { tokenString("integer", yytext); yylval.intValue=atoi(yytext); return INTEGER; }
 
-{digit}+\.{digit}+ { tokenString("float", yytext); return FLOAT; }
+{digit}+\.{digit}+ { tokenString("float", yytext); yylval.doubleValue=atof(yytext); return FLOAT; }
 
-({digit}+(\.{digit}+)?)[Ee][+-]?({digit}+) { tokenString("scientific", yytext); return SCIENTIFIC;}
+({digit}+(\.{digit}+)?)[Ee][+-]?({digit}+) { tokenString("scientific", yytext); yylval.doubleValue=atof(yytext); return SCIENTIFIC;}
 
 "\"" { LIST; BEGIN STR; }
 
@@ -116,6 +117,7 @@ letter [a-zA-Z]
 
 <STR>"\"" { 
             tokenString("string", strBuf);
+            yylval.stringValue=strdup(strBuf);
             memset(strBuf, 0, MAX_LINE_LENG); 
             BEGIN INITIAL;
             return STRING;
