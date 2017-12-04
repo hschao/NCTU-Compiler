@@ -9,8 +9,6 @@ extern char buf[256];           /* declared in lex.l */
 extern int Opt_D;           /* declared in lex.l */
 
 bool ignoreNextCompound = false;
-Type lastType;
-std::vector<std::string> ids;
 
 int yylex();
 int yyerror( char *msg );
@@ -27,6 +25,8 @@ int yyerror( char *msg );
 %type <variant> literal_constant
 %type <intValue> integer_constant
 %type <ids> identifier_list
+%type <typeID> scalar_type
+%type <type> type
 
 
 %left OR
@@ -89,8 +89,7 @@ argument
 
 variable_declaration
  : KW_VAR identifier_list COLON type SEMICOLON {
-       // symTable.back().addConstants(ids, lastType);
-       // ids.clear();
+       symTable.back().addVariables($2, $4);
    }
  ;
 
@@ -231,8 +230,14 @@ reference_list
  ;
 
 type
- : scalar_type
- | KW_ARRAY integer_constant KW_TO integer_constant KW_OF type
+ : scalar_type {
+     $$.typeID = $1;
+   }
+ | KW_ARRAY integer_constant KW_TO integer_constant KW_OF type {
+     $$.typeID = $6.typeID;
+     $$.dimensions = $6.dimensions;
+     $$.dimensions.insert($$.dimensions.begin(),$4-$2+1);
+   }
  ;
 
 integer_constant
@@ -241,10 +246,10 @@ integer_constant
  ;
 
 scalar_type
- : KW_INTEGER 
- | KW_REAL
- | KW_STRING
- | KW_BOOLEAN
+ : KW_INTEGER { $$=T_INTEGER; }
+ | KW_REAL { $$=T_REAL; }
+ | KW_STRING { $$=T_STRING; }
+ | KW_BOOLEAN { $$=T_BOOLEAN; }
  ;
 
 identifier_list

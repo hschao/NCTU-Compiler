@@ -74,7 +74,7 @@ void SymbolTable::PrintTable() {
 void SymbolTable::addConstants(std::vector<std::string> &ids, Variant value) {
   for(int i=0; i<ids.size(); i++) {
     SymbolTableEntry ste;
-    strcpy(ste.name, ids[i].c_str());
+    strncpy(ste.name, ids[i].c_str(), 32);
     ste.kind = K_CONST;
     ste.type.typeID = value.typeID;
     ste.type.dimensions.clear();
@@ -84,15 +84,13 @@ void SymbolTable::addConstants(std::vector<std::string> &ids, Variant value) {
 }
 
 void SymbolTable::addVariables(std::vector<std::string> &ids, Type t) {
-  // for(int i=0; i<ids.size(); i++) {
-  //   SymbolTableEntry ste;
-  //   strcpy(ste.name, ids[i].c_str());
-  //   ste.kind = K_CONST;
-  //   ste.type.typeID = value.typeID;
-  //   ste.type.dimensions.clear();
-  //   ste.attr.constant = value;
-  //   entries.push_back(ste);
-  // }
+  for(int i=0; i<ids.size(); i++) {
+    SymbolTableEntry ste;
+    strncpy(ste.name, ids[i].c_str(), 32);
+    ste.kind = K_VAR;
+    ste.type = t;
+    entries.push_back(ste);
+  }
 }
 
 char* SymbolTable::TypeToString(char* buf, Type t) {
