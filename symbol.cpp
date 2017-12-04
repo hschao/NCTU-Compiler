@@ -1,6 +1,8 @@
 #include "symbol.h"
 using namespace std;
 
+extern int linenum;
+
 vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
 const char* typeToStr[] = {"integer", "real", "boolean", "string", "void"};
@@ -79,7 +81,7 @@ void SymbolTable::addConstants(vector<string> &ids, Variant value) {
     ste.type.typeID = value.typeID;
     ste.type.dimensions.clear();
     ste.attr.constant = value;
-    entries.push_back(ste);
+    addEntry(ste);
   }
 }
 
@@ -89,7 +91,7 @@ void SymbolTable::addVariables(vector<string> &ids, Type t) {
     strcpy(ste.name, ids[i].c_str());
     ste.kind = K_VAR;
     ste.type = t;
-    entries.push_back(ste);
+    addEntry(ste);
   }
 }
 
@@ -100,7 +102,7 @@ void SymbolTable::addFunction(string id, vector<Arg> &paramLst, Type retType) {
   ste.type = retType;
   for(int i=0; i<paramLst.size(); i++)
     ste.attr.paramLst.push_back(paramLst[i].t);
-  entries.push_back(ste);
+  addEntry(ste);
 }
 
 void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
@@ -110,7 +112,7 @@ void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
     strcpy(ste.name, paramLst[i].name.c_str());
     ste.kind = K_PARAM;
     ste.type = paramLst[i].t;
-    entries.push_back(ste);
+    addEntry(ste);
   }
 }
 
@@ -120,6 +122,19 @@ void SymbolTable::addProgram(std::string name) {
   strcpy(ste.name, name.c_str());
   ste.kind = K_PROG;
   ste.type.typeID = T_NONE;
+  addEntry(ste);
+}
+
+void SymbolTable::addEntry(SymbolTableEntry &ste) {
+  for (int i=0; i<entries.size(); ++i)
+  {
+    if (strcmp(entries[i].name,ste.name)==0) {
+      
+      printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, ste.name);
+
+      return;
+    }
+  }
   entries.push_back(ste);
 }
 

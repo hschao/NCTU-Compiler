@@ -5,8 +5,8 @@
 #define LIST               strcat(buf, yytext)
 #define token(t)           {LIST; if (Opt_T) printf("<%s>\n", #t);}
 #define tokenChar(t)       {LIST; if (Opt_T) printf("<%c>\n", (t));}
-#define tokenInteger(t, i) {LIST; if (Opt_T) printf("<%s: %d>\n", #t, (i));}
-#define tokenString(t, s)  {LIST; if (Opt_T) printf("<%s: %s>\n", #t, (s));}
+#define tokenInteger(t, i) {LIST; if (Opt_T) printf("<%s: %d>\n", t, (i));}
+#define tokenString(t, s)  {LIST; if (Opt_T) printf("<%s: %s>\n", t, (s));}
 #define MAX_LINE_LENG      556
 
 int Opt_S = 1;

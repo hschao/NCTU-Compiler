@@ -68,13 +68,13 @@ r                                variable   0(global)  real
 e                                variable   0(global)  integer [10]     
 ee                               variable   0(global)  integer [10]     
 f                                variable   0(global)  integer [5][5][2]
-g                                constant   0(global)  integer          10
-gg                               constant   0(global)  integer          10
+g                                constant   0(global)  integer          10         
+gg                               constant   0(global)  integer          10         
 h                                constant   0(global)  string           "Gimme Gimme Gimme!!"
-i                                constant   0(global)  boolean          true
-j                                constant   0(global)  real             2.560000
-k                                constant   0(global)  real             0.111111
-l                                constant   0(global)  integer          511
+i                                constant   0(global)  boolean          true       
+j                                constant   0(global)  real             2.560000   
+k                                constant   0(global)  real             0.111111   
+l                                constant   0(global)  integer          511        
 fun                              function   0(global)  void             
 fun2                             function   0(global)  integer          integer, integer, string
 fun3                             function   0(global)  real [10]        boolean [10]
