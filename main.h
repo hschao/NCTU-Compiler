@@ -11,7 +11,7 @@ typedef struct
   char *stringValue;
   Variant variant;
   std::vector<std::string> ids;
-  std::vector<Type> args;
+  std::vector<Arg> args;
   Type type;
   TypeID typeID;
 } yylvalType;

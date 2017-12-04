@@ -39,7 +39,7 @@ int yyerror( char *msg );
 
 /* program */
 program 
- : IDENT SEMICOLON { push_SymbolTable(); } programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
+ : IDENT SEMICOLON { push_SymbolTable(); symTable.back().addProgram($1);} programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
  ;
 
 programbody
@@ -68,6 +68,7 @@ function_declaration
         // Create new symbol table.
         push_SymbolTable(); 
         ignoreNextCompound=true; 
+        symTable.back().addParameters($3);
     }    
     compound_statement 
    KW_END IDENT
@@ -80,6 +81,7 @@ function_declaration
         // Create new symbol table.
         push_SymbolTable(); 
         ignoreNextCompound=true; 
+        symTable.back().addParameters($3);
     }    
     compound_statement
    KW_END IDENT
@@ -98,7 +100,14 @@ argument_list
  ;
 
 argument
- : identifier_list COLON type { for(int i=0; i<$1.size(); i++) $$.push_back($3); }
+ : identifier_list COLON type { 
+    for(int i=0; i<$1.size(); i++) {
+      Arg arg;
+      arg.name = $1[i];
+      arg.t = $3;
+      $$.push_back(arg); 
+    }
+   }
  ;
 
 

@@ -74,7 +74,7 @@ void SymbolTable::PrintTable() {
 void SymbolTable::addConstants(vector<string> &ids, Variant value) {
   for(int i=0; i<ids.size(); i++) {
     SymbolTableEntry ste;
-    strncpy(ste.name, ids[i].c_str(), 32);
+    strcpy(ste.name, ids[i].c_str());
     ste.kind = K_CONST;
     ste.type.typeID = value.typeID;
     ste.type.dimensions.clear();
@@ -86,19 +86,40 @@ void SymbolTable::addConstants(vector<string> &ids, Variant value) {
 void SymbolTable::addVariables(vector<string> &ids, Type t) {
   for(int i=0; i<ids.size(); i++) {
     SymbolTableEntry ste;
-    strncpy(ste.name, ids[i].c_str(), 32);
+    strcpy(ste.name, ids[i].c_str());
     ste.kind = K_VAR;
     ste.type = t;
     entries.push_back(ste);
   }
 }
 
-void SymbolTable::addFunction(string id, vector<Type> &paramLst, Type retType) {
+void SymbolTable::addFunction(string id, vector<Arg> &paramLst, Type retType) {
   SymbolTableEntry ste;
-  strncpy(ste.name, id.c_str(), 32);
+  strcpy(ste.name, id.c_str());
   ste.kind = K_FUNC;
   ste.type = retType;
-  ste.attr.paramLst = paramLst;
+  for(int i=0; i<paramLst.size(); i++)
+    ste.attr.paramLst.push_back(paramLst[i].t);
+  entries.push_back(ste);
+}
+
+void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
+
+  for(int i=0; i<paramLst.size(); i++) {
+    SymbolTableEntry ste;
+    strcpy(ste.name, paramLst[i].name.c_str());
+    ste.kind = K_PARAM;
+    ste.type = paramLst[i].t;
+    entries.push_back(ste);
+  }
+}
+
+void SymbolTable::addProgram(std::string name) {
+
+  SymbolTableEntry ste;
+  strcpy(ste.name, name.c_str());
+  ste.kind = K_PROG;
+  ste.type.typeID = T_NONE;
   entries.push_back(ste);
 }
 

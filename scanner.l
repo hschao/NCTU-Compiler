@@ -72,7 +72,7 @@ letter [a-zA-Z]
 "var"     { token(KWvar); return KW_VAR; }
 "while"   { token(KWwhile); return KW_WHILE; }
 
-{letter}({digit}|{letter})*  { tokenString("id", yytext); yylval.stringValue=strdup(yytext); return IDENT; }
+{letter}({digit}|{letter})*  { tokenString("id", yytext); yylval.stringValue=strndup(yytext,32); return IDENT; }
 
 0[0-7]+ { tokenString("oct_integer", yytext); sscanf(yytext, "%o", &yylval.intValue); return OCT_INTEGER; }
 ((0)|([1-9]{digit}*)) { tokenString("integer", yytext); yylval.intValue=atoi(yytext); return INTEGER; }

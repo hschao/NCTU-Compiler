@@ -24,6 +24,11 @@ typedef struct {
 } Variant;
 
 typedef struct {
+  std::string name;
+  Type t;
+} Arg;
+
+typedef struct {
   Variant constant;
   std::vector<Type> paramLst;
 } Attr;
@@ -46,8 +51,9 @@ public:
   void PrintTable();
   void addConstants(std::vector<std::string> &ids, Variant value);
   void addVariables(std::vector<std::string> &ids, Type t);
-  void addFunction(std::string id, std::vector<Type> &paramLst, Type retType);
-
+  void addFunction(std::string id, std::vector<Arg> &paramLst, Type retType);
+  void addParameters(std::vector<Arg> &paramLst);
+  void addProgram(std::string name);
 
   std::vector<SymbolTableEntry> entries;
   int level;
