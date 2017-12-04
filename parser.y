@@ -88,7 +88,7 @@ function_declaration
  ; 
 
 arguments
- : empty
+ : empty { $$.clear(); }
  | argument_list { 
     $$ = $1;
    }
