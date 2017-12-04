@@ -6,12 +6,11 @@
 
 using namespace std;
 
-vector<SymbolTable> symTable;
-
 extern int linenum;             /* declared in lex.l */
 extern FILE *yyin;              /* declared by lex */
 extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
+extern int Opt_D;           /* declared in lex.l */
 
 int yylex();
 int yyerror( char *msg );
@@ -32,11 +31,11 @@ int yyerror( char *msg );
 
 /* program */
 program 
- : IDENT SEMICOLON {printf("!!!MIDDLE OF program\n");} programbody KW_END IDENT
+ : IDENT SEMICOLON { push_SymbolTable(); } programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
  ;
 
 programbody
- : var_constant_declarations function_declarations compound_statement {printf("!!!END OF programbody\n");}
+ : var_constant_declarations function_declarations compound_statement
  ;
 
 var_constant_declarations
@@ -116,8 +115,10 @@ statement
 
 compound_statement
  : KW_BEGIN
+     { push_SymbolTable(); }    
      var_constant_declarations
      statements
+     { pop_SymbolTable(Opt_D); }
    KW_END
  ;
 
@@ -264,11 +265,7 @@ int  main( int argc, char **argv )
 
     yyin = fp;
     yyparse();
-
-    fprintf( stdout, "\n" );
-    fprintf( stdout, "|--------------------------------|\n" );
-    fprintf( stdout, "|  There is no syntactic error!  |\n" );
-    fprintf( stdout, "|--------------------------------|\n" );
+    
     exit(0);
 }
 

@@ -10,6 +10,7 @@
 
 int Opt_S = 1;
 int Opt_T = 1;
+int Opt_D = 1;
 int linenum = 1;
 char buf[MAX_LINE_LENG];
 char strBuf[MAX_LINE_LENG];
@@ -88,6 +89,9 @@ letter [a-zA-Z]
                     break;
                   case 'T':
                     Opt_T = (yytext[4] == '+');
+                    break;
+                  case 'D':
+                    Opt_D = (yytext[4] == '+');
                     break;
                   }
                   BEGIN COMMENT;

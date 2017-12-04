@@ -1,11 +1,13 @@
 #include <vector>
+#include <cstring>
+#include <iostream>
 
 typedef enum _Kind {
-  K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST
+  K_PROG=0, K_FUNC, K_PARAM, K_VAR, K_CONST
 } Kind;
 
 typedef enum _TypeName {
-  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_ARRAY
+  T_INTEGER=5, T_REAL, T_BOOLEAN, T_STRING, T_ARRAY
 } TypeName;
 
 typedef struct _ArrayInfo {
@@ -18,14 +20,14 @@ typedef struct _Type {
   ArrayInfo arrayInfo;
 } Type;
 
-typedef union _Attr {
-  union {
+typedef struct {
+  struct {
     int integer;
     float real;
     bool bl;
-    char* str; 
+    std::string str; 
   } constant;
-  std::vector<Type>* paramLst;
+  std::vector<Type> paramLst;
 } Attr;
 
 class SymbolTableEntry {
@@ -40,9 +42,18 @@ public:
 
 class SymbolTable {
 public:
+  SymbolTable() {};
   SymbolTable(int level);
+  void PrintTable();
   void addEntry();
   std::vector<SymbolTableEntry> entries;
   int level;
+private:
+  char* TypeToString(char* buf, Type t);
 };
+
+void push_SymbolTable();
+void pop_SymbolTable(bool print);
+
+extern std::vector<SymbolTable> symTable;
 
