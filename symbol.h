@@ -3,7 +3,7 @@
 #include <iostream>
 
 typedef enum {
-  K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST
+  K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST, K_LOOP_VAR
 } Kind;
 
 typedef enum {
@@ -62,8 +62,9 @@ private:
   char* TypeToString(char* buf, Type t);
 };
 
-void push_SymbolTable();
+void push_SymbolTable(bool isVisible);
 void pop_SymbolTable(bool print);
+bool checkLoopVarRedeclare(char* name);
 
 extern std::vector<SymbolTable> symTable;
 

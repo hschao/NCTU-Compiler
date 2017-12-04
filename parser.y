@@ -39,7 +39,7 @@ int yyerror( char *msg );
 
 /* program */
 program 
- : IDENT SEMICOLON { push_SymbolTable(); symTable.back().addProgram($1);} programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
+ : IDENT SEMICOLON { push_SymbolTable(true); symTable.back().addProgram($1);} programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
  ;
 
 programbody
@@ -66,7 +66,7 @@ function_declaration
         symTable.back().addFunction($1, $3, $6);
 
         // Create new symbol table.
-        push_SymbolTable(); 
+        push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
     }    
@@ -79,7 +79,7 @@ function_declaration
         symTable.back().addFunction($1, $3, t);
 
         // Create new symbol table.
-        push_SymbolTable(); 
+        push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
     }    
@@ -159,7 +159,7 @@ statement
 
 compound_statement
  : KW_BEGIN
-     { if(!ignoreNextCompound) { push_SymbolTable(); } ignoreNextCompound=false; }    
+     { if(!ignoreNextCompound) { push_SymbolTable(true); } ignoreNextCompound=false; }    
      var_constant_declarations
      statements
      { pop_SymbolTable(Opt_D); }
@@ -183,7 +183,24 @@ while_statement
  ;
 
 for_statement 
- : KW_FOR IDENT ASSIGN integer_constant KW_TO integer_constant KW_DO statements KW_END KW_DO
+ : KW_FOR IDENT ASSIGN integer_constant KW_TO integer_constant KW_DO 
+    { 
+        // Create invisible symbol table.
+        push_SymbolTable(false); 
+
+        // Check loop variable redeclare.
+        if(checkLoopVarRedeclare($2)) {
+            SymbolTableEntry ste;
+            strcpy(ste.name, $2);
+            ste.kind = K_LOOP_VAR;
+            ste.type.typeID = T_INTEGER;
+            ste.type.dimensions.clear();
+            symTable.back().entries.push_back(ste);
+        }
+    }
+    statements 
+    { pop_SymbolTable(false); }
+   KW_END KW_DO
  ;
 
 return_statement 

@@ -126,12 +126,12 @@ void SymbolTable::addProgram(std::string name) {
 }
 
 void SymbolTable::addEntry(SymbolTableEntry &ste) {
+  if (!checkLoopVarRedeclare(ste.name))
+    return;
   for (int i=0; i<entries.size(); ++i)
   {
     if (strcmp(entries[i].name,ste.name)==0) {
-      
       printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, ste.name);
-
       return;
     }
   }
@@ -160,9 +160,9 @@ SymbolTableEntry::SymbolTableEntry() {
   // attr.paramLst = NULL;
 }
 
-void push_SymbolTable() {
-  int tableCount = symTable.size();
-  SymbolTable st(tableCount);
+void push_SymbolTable(bool isVisible) {
+  int newLevel = (symTable.empty())? 0: symTable.back().level+(isVisible? 1: 0);
+  SymbolTable st(newLevel);
   symTable.push_back(st);
 }
 
@@ -171,4 +171,16 @@ void pop_SymbolTable(bool print) {
   if (print)
     st.PrintTable();
   symTable.pop_back();
+}
+
+bool checkLoopVarRedeclare(char* name) {
+  for (int i=symTable.size()-1; i>=0; i--) {
+    if (symTable[i].entries.empty())
+      continue;
+    if (symTable[i].entries[0].kind==K_LOOP_VAR && strcmp(symTable[i].entries[0].name,name)==0) {
+      printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, name);
+      return false;
+    }
+  }
+  return true;
 }
