@@ -16,6 +16,7 @@ int linenum = 1;
 char buf[MAX_LINE_LENG];
 char strBuf[MAX_LINE_LENG];
 %}
+%option noyywrap
 
 digit [0-9]
 letter [a-zA-Z]

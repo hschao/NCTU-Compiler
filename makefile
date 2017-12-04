@@ -1,6 +1,6 @@
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
-	GCC_EXTRA_PARAM := -lfl
+	GCC_EXTRA_PARAM := 
 else ifeq ($(UNAME), Darwin)
 	GCC_EXTRA_PARAM := -ll
 endif
