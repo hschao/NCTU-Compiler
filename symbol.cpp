@@ -15,6 +15,7 @@ void SymbolTable::PrintTable() {
     printf("=");
   }
   printf("\n");
+  // printf("level = %d\n", level);
   printf("%-33s%-11s%-11s%-17s%-11s\n","Name","Kind","Level","Type","Attribute");
   for(i=0;i< 110;i++) {
     printf("-");
@@ -51,11 +52,12 @@ void SymbolTable::PrintTable() {
         printf("%-11s", output.c_str());
       }
     } else if (entries[i].kind == K_CONST) {
-      switch (entries[i].type.typeName) {
+      switch (entries[i].type.typeID) {
         case T_INTEGER: printf("%-11d", entries[i].attr.constant.integer); break;
         case T_REAL: printf("%-11f", entries[i].attr.constant.real); break;
         case T_BOOLEAN: printf("%-11s", entries[i].attr.constant.bl? "true": "false"); break;
-        case T_STRING: printf("%-11s", entries[i].attr.constant.str.c_str()); break;
+        case T_STRING: printf("\"%-11s\"", entries[i].attr.constant.str); break;
+        default:;
       }
     }
     printf("\n");
@@ -68,21 +70,19 @@ void SymbolTable::PrintTable() {
   printf("\n");
 }
 
+void SymbolTable::addConstants(std::vector<std::string> &ids, Type &t, Variant value) {
+
+}
+
 char* SymbolTable::TypeToString(char* buf, Type t) {
-  switch (t.typeName) {
-    case T_INTEGER: 
-    case T_REAL: 
-    case T_BOOLEAN: 
-    case T_STRING: 
-      sprintf(buf, "%-17s", lookUp[t.typeName]); 
-      break;
-    case T_ARRAY: 
-      int i = sprintf(buf, "%s ", lookUp[t.arrayInfo.typeName]);
-      for(int j=0; j<t.arrayInfo.dimensions.size(); j++) {
-        int dim = t.arrayInfo.dimensions[j];
-        sprintf(buf+i, "[%d]", dim);
-      }
-      break; 
+
+  bool isArray = (t.dimensions.size() > 0);
+  int i = sprintf(buf, isArray? "%s ": "%s", lookUp[t.typeID]);
+  if (isArray) {
+    for(int j=0; j<t.dimensions.size(); j++) {
+      int dim = t.dimensions[j];
+      sprintf(buf+i, "[%d]", dim);
+    }
   }
   return buf;
 }

@@ -2,31 +2,28 @@
 #include <cstring>
 #include <iostream>
 
-typedef enum _Kind {
+typedef enum {
   K_PROG=0, K_FUNC, K_PARAM, K_VAR, K_CONST
 } Kind;
 
-typedef enum _TypeName {
-  T_INTEGER=5, T_REAL, T_BOOLEAN, T_STRING, T_ARRAY
-} TypeName;
-
-typedef struct _ArrayInfo {
-  TypeName typeName;
-  std::vector<int> dimensions;
-} ArrayInfo;
-
-typedef struct _Type {
-  TypeName typeName;
-  ArrayInfo arrayInfo;
-} Type;
+typedef enum {
+  T_INTEGER=5, T_REAL, T_BOOLEAN, T_STRING
+} TypeID;
 
 typedef struct {
-  struct {
+  TypeID typeID;
+  std::vector<int> dimensions;
+} Type;
+
+typedef union {
     int integer;
     float real;
     bool bl;
-    std::string str; 
-  } constant;
+    char* str; 
+} Variant;
+
+typedef struct {
+  Variant constant;
   std::vector<Type> paramLst;
 } Attr;
 
@@ -34,6 +31,7 @@ class SymbolTableEntry {
 public:
   SymbolTableEntry();
   ~SymbolTableEntry();
+
   char name[35];
   Kind kind;
   Type type;
@@ -45,7 +43,7 @@ public:
   SymbolTable() {};
   SymbolTable(int level);
   void PrintTable();
-  void addEntry();
+  void addConstants(std::vector<std::string> &ids, Type &t, Variant value);
   std::vector<SymbolTableEntry> entries;
   int level;
 private:

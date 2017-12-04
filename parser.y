@@ -12,6 +12,10 @@ extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
 extern int Opt_D;           /* declared in lex.l */
 
+bool ignoreNextCompound = false;
+Type lastType;
+std::vector<std::string> ids;
+
 int yylex();
 int yyerror( char *msg );
 %}
@@ -53,7 +57,13 @@ function_declarations
 
 /* function */
 function_declaration
- : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON compound_statement KW_END IDENT
+ : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON 
+    { 
+        push_SymbolTable(); 
+        ignoreNextCompound=true; 
+    }    
+    compound_statement 
+   KW_END IDENT
  | IDENT L_PAREN arguments R_PAREN SEMICOLON compound_statement KW_END IDENT
  ; 
 
@@ -78,18 +88,22 @@ variable_declaration
  ;
 
 constant_declaration
- : KW_VAR identifier_list COLON literal_constant SEMICOLON
+ : KW_VAR identifier_list COLON literal_constant SEMICOLON {
+        
+        ids.clear();
+   }
  ;
 
 literal_constant
- : STRING
- | integer_constant
- | SCIENTIFIC
- | FLOAT
- | SUB integer_constant
- | SUB SCIENTIFIC
- | SUB FLOAT
- | KW_TRUE | KW_FALSE
+ : STRING { lastType.typeID = T_STRING; }
+ | integer_constant { lastType.typeID = T_INTEGER; }
+ | SCIENTIFIC { lastType.typeID = T_REAL; }
+ | FLOAT { lastType.typeID = T_REAL; }
+ | SUB integer_constant { lastType.typeID = T_INTEGER; }
+ | SUB SCIENTIFIC { lastType.typeID = T_REAL; }
+ | SUB FLOAT { lastType.typeID = T_REAL; }
+ | KW_TRUE { lastType.typeID = T_BOOLEAN; }
+ | KW_FALSE { lastType.typeID = T_BOOLEAN; }
  ;
 
 /* statements */
@@ -115,7 +129,7 @@ statement
 
 compound_statement
  : KW_BEGIN
-     { push_SymbolTable(); }    
+     { if(!ignoreNextCompound) { push_SymbolTable(); } ignoreNextCompound=false; }    
      var_constant_declarations
      statements
      { pop_SymbolTable(Opt_D); }
@@ -228,8 +242,8 @@ scalar_type
  ;
 
 identifier_list
- : identifier_list COMMA IDENT
- | IDENT
+ : identifier_list COMMA IDENT { /* ids.push_back($3); */ }
+ | IDENT { /* ids.push_back($1); */ }
 
 empty
  :
@@ -265,7 +279,7 @@ int  main( int argc, char **argv )
 
     yyin = fp;
     yyparse();
-    
+
     exit(0);
 }
 
