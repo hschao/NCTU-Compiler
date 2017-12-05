@@ -63,25 +63,25 @@ function_declarations
 function_declaration
  : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON 
     { 
-        symTable.back().addFunction($1, $3, $6);
-
         // Create new symbol table.
         push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
+
+        symTable[symTable.size()-2].addFunction($1, $3, $6);
     }    
     compound_statement 
    KW_END IDENT
  | IDENT L_PAREN arguments R_PAREN SEMICOLON 
     { 
-        Type t;
-        t.typeID = T_NONE;
-        symTable.back().addFunction($1, $3, t);
-
         // Create new symbol table.
         push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
+
+        Type t;
+        t.typeID = T_NONE;
+        symTable[symTable.size()-2].addFunction($1, $3, t);
     }    
     compound_statement
    KW_END IDENT

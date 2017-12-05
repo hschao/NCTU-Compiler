@@ -112,7 +112,8 @@ void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
     strcpy(ste.name, paramLst[i].name.c_str());
     ste.kind = K_PARAM;
     ste.type = paramLst[i].t;
-    addEntry(ste);
+    if (!addEntry(ste))
+      paramLst.erase(paramLst.begin()+i);
   }
 }
 
@@ -125,17 +126,18 @@ void SymbolTable::addProgram(std::string name) {
   addEntry(ste);
 }
 
-void SymbolTable::addEntry(SymbolTableEntry &ste) {
+bool SymbolTable::addEntry(SymbolTableEntry &ste) {
   if (!checkLoopVarRedeclare(ste.name))
-    return;
+    return false;
   for (int i=0; i<entries.size(); ++i)
   {
     if (strcmp(entries[i].name,ste.name)==0) {
       printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, ste.name);
-      return;
+      return false;
     }
   }
   entries.push_back(ste);
+  return true;
 }
 
 char* SymbolTable::TypeToString(char* buf, Type t) {

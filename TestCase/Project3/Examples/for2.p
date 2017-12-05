@@ -1,5 +1,12 @@
 //&T-
 error;
+
+foo(a,b,c:integer;c,d:string);
+begin
+end
+end foo
+
+
 begin   
     var a:string;  
     for i:=1 to 10 do

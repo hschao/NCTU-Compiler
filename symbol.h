@@ -54,7 +54,7 @@ public:
   void addFunction(std::string id, std::vector<Arg> &paramLst, Type retType);
   void addParameters(std::vector<Arg> &paramLst);
   void addProgram(std::string name);
-  void addEntry(SymbolTableEntry &ste);
+  bool addEntry(SymbolTableEntry &ste);
 
   std::vector<SymbolTableEntry> entries;
   int level;
