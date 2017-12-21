@@ -7,7 +7,7 @@ typedef enum {
 } Kind;
 
 typedef enum {
-  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_NONE
+  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_NONE, T_ERROR
 } TypeID;
 
 typedef struct {
@@ -65,6 +65,9 @@ private:
 void push_SymbolTable(bool isVisible);
 void pop_SymbolTable(bool print);
 bool checkLoopVarRedeclare(char* name);
+SymbolTableEntry* getLastFunc();
+SymbolTableEntry* findSymbol(std::string name);
+SymbolTableEntry* findFunction(std::string name);
 
 extern std::vector<SymbolTable> symTable;
 

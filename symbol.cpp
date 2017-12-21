@@ -189,3 +189,32 @@ bool checkLoopVarRedeclare(char* name) {
   }
   return true;
 }
+
+SymbolTableEntry* getLastFunc() {
+  if (symTable.size() == 0)
+    return NULL;
+  for(int i=symTable[0].entries.size()-1; i>=0; i--) 
+    if (symTable[0].entries[i].kind == K_FUNC)
+      return &symTable[0].entries[i];
+  return NULL;
+}
+
+SymbolTableEntry* findSymbol(string name) {
+  for(int i=symTable.size()-1; i>=0; i--)
+    for(int j=0; j<symTable[i].entries.size(); j++)
+      if (strcmp(symTable[i].entries[j].name, name.c_str()) == 0)
+        return &symTable[i].entries[j];
+  string msg = "symbol '" + name + "' not found";
+  semanticError(msg.c_str());
+  return NULL;
+}
+
+SymbolTableEntry* findFunction(string name) {
+
+  for(int j=0; j<symTable[0].entries.size(); j++)
+    if (strcmp(symTable[0].entries[j].name, name.c_str()) == 0 && symTable[0].entries[j].kind == K_FUNC)
+      return &symTable[0].entries[j];
+  string msg = "symbol '" + name + "' not found";
+  semanticError(msg.c_str());
+  return NULL;
+}

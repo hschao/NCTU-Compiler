@@ -10,6 +10,7 @@ extern int Opt_D;           /* declared in lex.l */
 
 string fileName;
 bool ignoreNextCompound = false;
+bool isParsingProgram = false;
 
 int yylex();
 int yyerror( const char *msg );
@@ -25,10 +26,11 @@ void semanticError( string msg );
 %token <boolValue>  KW_TRUE KW_FALSE
 
 %type <variant> literal_constant
-%type <intValue> integer_constant
+%type <intValue> integer_constant reference_list
 %type <ids> identifier_list
 %type <typeID> scalar_type
-%type <type> type
+%type <type> type function_return_type expression operand
+%type <type> variable_reference function_invocation
 %type <args> arguments argument_list argument
 
 %left OR
@@ -58,7 +60,7 @@ program
  ;
 
 programbody
- : var_constant_declarations function_declarations compound_statement
+ : var_constant_declarations function_declarations { isParsingProgram=true; } compound_statement
  ;
 
 var_constant_declarations
@@ -76,31 +78,28 @@ function_declarations
 
 /* function */
 function_declaration
- : IDENT L_PAREN arguments R_PAREN COLON type SEMICOLON 
+ : IDENT L_PAREN arguments R_PAREN function_return_type SEMICOLON 
     { 
         // Create new symbol table.
         push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
-
-        symTable[symTable.size()-2].addFunction($1, $3, $6);
+        if ($5.dimensions.size() == 0)
+            symTable[symTable.size()-2].addFunction($1, $3, $5);
+        else
+            semanticError("a function cannot return an array type");
     }    
     compound_statement 
-   KW_END IDENT
- | IDENT L_PAREN arguments R_PAREN SEMICOLON 
-    { 
-        // Create new symbol table.
-        push_SymbolTable(true); 
-        ignoreNextCompound=true; 
-        symTable.back().addParameters($3);
-
-        Type t;
-        t.typeID = T_NONE;
-        symTable[symTable.size()-2].addFunction($1, $3, t);
-    }    
-    compound_statement
-   KW_END IDENT
+   KW_END IDENT {
+    if (strcmp($1, $10) != 0)
+        semanticError("the end of the functionName mismatch");
+   }
  ; 
+
+function_return_type
+ : COLON type { $$ = $2; }
+ | empty { $$.typeID = T_NONE; }
+ ;
 
 arguments
  : empty { $$.clear(); }
@@ -182,7 +181,9 @@ compound_statement
  ;
 
 simple_statement
- : variable_reference ASSIGN expression SEMICOLON
+ : variable_reference ASSIGN expression SEMICOLON {
+
+   }
  | KW_PRINT variable_reference SEMICOLON
  | KW_PRINT expression SEMICOLON
  | KW_READ variable_reference SEMICOLON
@@ -219,7 +220,14 @@ for_statement
  ;
 
 return_statement 
- : KW_RETURN expression SEMICOLON
+ : KW_RETURN expression SEMICOLON {
+    if (isParsingProgram)
+        semanticError("program cannot be returned");
+    // else {
+    //     SymbolTableEntry* p = symTable.getLastFunc();
+    //     if (p->)
+    // }
+   }
  ;
 
 function_invocation_statement
@@ -239,7 +247,7 @@ expression_list
  ;
 
 expression
- : operand
+ : operand { $$ = $1; }
  | expression operator_arithmetic expression
  | expression operator_compare expression
  | expression operator_logical expression
@@ -256,9 +264,9 @@ integer_expr
  ;
 
 operand 
- : variable_reference
- | literal_constant
- | function_invocation
+ : variable_reference { $$ = $1; }
+ | literal_constant { $$.typeID = $1.typeID; }
+ | function_invocation { $$ = $1; }
  ;
 
 operator_logical
@@ -274,16 +282,36 @@ operator_arithmetic
  ;
 
 function_invocation
- : IDENT L_PAREN expressions R_PAREN
+ : IDENT L_PAREN expressions R_PAREN { 
+    $$.typeID = T_ERROR;
+    SymbolTableEntry* p = findFunction($1);
+    if (p!=NULL)
+        $$ = p->type;
+   }
  ;
 
 variable_reference
- : IDENT reference_list
+ : IDENT reference_list {
+    $$.typeID = T_ERROR;
+    SymbolTableEntry* p = findSymbol($1);
+    if (p!=NULL) {
+        int dim = p->type.dimensions.size();
+        if ($2 > dim) {
+            char buf[300];
+            sprintf(buf, "'%s' is %d dimension(s), but reference in %d dimension(s)", $1, dim, $2);
+            semanticError(buf);
+        } else {
+            $$ = p->type;
+            if ($2 > 0)
+                $$.dimensions.erase($$.dimensions.begin(), $$.dimensions.begin() + $2);
+        }
+    }
+   }
  ;
 
 reference_list
- : reference_list L_BRACKET integer_expr R_BRACKET
- | empty
+ : reference_list L_BRACKET integer_expr R_BRACKET { $$ = $1 + 1;}
+ | empty { $$ = 0; }
  ;
 
 type
