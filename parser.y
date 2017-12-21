@@ -8,10 +8,12 @@ extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
 extern int Opt_D;           /* declared in lex.l */
 
+string fileName;
 bool ignoreNextCompound = false;
 
 int yylex();
-int yyerror( char *msg );
+int yyerror( const char *msg );
+void semanticError( string msg );
 %}
 
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
@@ -39,7 +41,20 @@ int yyerror( char *msg );
 
 /* program */
 program 
- : IDENT SEMICOLON { push_SymbolTable(true); symTable.back().addProgram($1);} programbody KW_END IDENT { pop_SymbolTable(Opt_D); }
+ : IDENT SEMICOLON { 
+    if (fileName != $1)
+        semanticError("program beginning ID inconsist with file name");
+
+    push_SymbolTable(true);
+    symTable.back().addProgram($1);
+   } programbody KW_END IDENT { 
+    pop_SymbolTable(Opt_D);
+
+    if (strcmp($1, $6) != 0)
+        semanticError("program end ID inconsist with the beginning ID");
+    if (fileName != $6)
+        semanticError("program end ID inconsist with file name");
+   }
  ;
 
 programbody
@@ -304,7 +319,7 @@ empty
 
 %%
 
-int yyerror( char *msg )
+int yyerror( const char *msg )
 {
     fprintf( stderr, "\n|--------------------------------------------------------------------------\n" );
     fprintf( stderr, "| Error found in Line #%d: %s\n", linenum, buf );
@@ -312,6 +327,29 @@ int yyerror( char *msg )
     fprintf( stderr, "| Unmatched token: %s\n", yytext );
     fprintf( stderr, "|--------------------------------------------------------------------------\n" );
     exit(-1);
+}
+
+bool noError = true;
+void semanticError( string msg )
+{
+    printf("<Error> found in Line %d: %s\n", linenum, msg.c_str() );
+    noError = false;
+}
+
+string getFileName(string s) {
+
+    char sep = '/';
+#ifdef _WIN32
+    sep = '\\';
+#endif
+
+    size_t i = s.rfind(sep, s.length());
+    if (i != string::npos)
+        s = s.substr(i+1);
+    i = s.rfind('.', s.length());
+    if (i != string::npos)
+        s = s.substr(0,i);
+    return s;
 }
 
 int  main( int argc, char **argv )
@@ -322,7 +360,7 @@ int  main( int argc, char **argv )
     }
 
     FILE *fp = fopen( argv[1], "r" );
-    
+    fileName = getFileName(argv[1]);
     if( fp == NULL )  {
         fprintf( stdout, "Open  file  error\n" );
         exit(-1);
@@ -332,7 +370,11 @@ int  main( int argc, char **argv )
 
     yyin = fp;
     yyparse();
-
+    if (noError) {
+        printf("|-------------------------------------------|\n");
+        printf("| There is no syntactic and semantic error! |\n");
+        printf("|-------------------------------------------|\n");
+    }
     exit(0);
 }
 

@@ -2,6 +2,7 @@
 using namespace std;
 
 extern int linenum;
+extern void semanticError( string msg );
 
 vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
@@ -9,7 +10,6 @@ const char* typeToStr[] = {"integer", "real", "boolean", "string", "void"};
 
 SymbolTable::SymbolTable(int level) {
   this->level = level;
-
 }
 
 void SymbolTable::PrintTable() {
@@ -19,7 +19,6 @@ void SymbolTable::PrintTable() {
     printf("=");
   }
   printf("\n");
-  // printf("level = %d\n", level);
   printf("%-33s%-11s%-11s%-17s%-11s\n","Name","Kind","Level","Type","Attribute");
   for(i=0;i< 110;i++) {
     printf("-");
@@ -132,7 +131,9 @@ bool SymbolTable::addEntry(SymbolTableEntry &ste) {
   for (int i=0; i<entries.size(); ++i)
   {
     if (strcmp(entries[i].name,ste.name)==0) {
-      printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, ste.name);
+      char buf[200];
+      sprintf(buf, "symbol '%s' is redeclared", ste.name);
+      semanticError(buf);
       return false;
     }
   }
@@ -180,7 +181,9 @@ bool checkLoopVarRedeclare(char* name) {
     if (symTable[i].entries.empty())
       continue;
     if (symTable[i].entries[0].kind==K_LOOP_VAR && strcmp(symTable[i].entries[0].name,name)==0) {
-      printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, name);
+      char buf[200];
+      sprintf(buf, "symbol '%s' is redeclared", name);
+      semanticError(buf);
       return false;
     }
   }
