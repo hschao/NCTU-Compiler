@@ -85,15 +85,22 @@ function_declaration
         push_SymbolTable(true); 
         ignoreNextCompound=true; 
         symTable.back().addParameters($3);
-        if ($5.dimensions.size() == 0)
-            symTable[symTable.size()-2].addFunction($1, $3, $5);
-        else
+        symTable[symTable.size()-2].addFunction($1, $3, $5);
+        
+        if ($5.dimensions.size() != 0)
             semanticError("a function cannot return an array type");
     }    
     compound_statement 
    KW_END IDENT {
     if (strcmp($1, $10) != 0)
         semanticError("the end of the functionName mismatch");
+
+    if ($5.dimensions.size() != 0)
+        for(int i=0; i<symTable[0].entries.size(); i++)
+            if (strcmp(symTable[0].entries[i].name, $1) == 0) {
+                symTable[0].entries.erase(symTable[0].entries.begin()+i);
+                break;
+            }
    }
  ; 
 
