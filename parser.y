@@ -18,9 +18,10 @@ void semanticError( string msg );
 %}
 
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
-%token ADD SUB MUL DIV MOD ASSIGN LESS LESS_EQU NOT_EQU GREAT_EQU GREAT EQU AND OR NOT
+%token ASSIGN
 %token KW_ARRAY KW_BEGIN KW_BOOLEAN KW_DEF KW_DO KW_ELSE KW_END KW_FOR KW_INTEGER KW_IF KW_OF KW_PRINT KW_READ KW_REAL KW_STRING KW_THEN KW_TO KW_RETURN KW_VAR KW_WHILE
 %token <stringValue> IDENT STRING
+%token <stringValue> ADD SUB MUL DIV MOD LESS LESS_EQU NOT_EQU GREAT_EQU GREAT EQU AND OR NOT
 %token <intValue> OCT_INTEGER INTEGER
 %token <doubleValue> FLOAT SCIENTIFIC 
 %token <boolValue>  KW_TRUE KW_FALSE
@@ -29,7 +30,7 @@ void semanticError( string msg );
 %type <intValue> integer_constant reference_list
 %type <ids> identifier_list
 %type <typeID> scalar_type
-%type <type> type function_return_type expression operand integer_expr boolean_expr
+%type <type> type function_return_type expression operand integer_expr boolean_expr condition
 %type <type> function_invocation
 %type <args> arguments argument_list argument 
 %type <entry> variable_reference
@@ -247,18 +248,28 @@ simple_statement
         semanticError(buf);
     }  else if ($2.kind == K_PARAM || $2.kind == K_VAR) {
         if ($2.type.dimensions.size() > 0)
-            semanticError("operand of print statement is array type");
+            semanticError("operand of read statement is array type");
     } 
    }
  ;
 
 conditional_statement 
- : KW_IF boolean_expr KW_THEN statements KW_ELSE statements KW_END KW_IF
- | KW_IF boolean_expr KW_THEN statements KW_END KW_IF
+ : KW_IF condition KW_THEN statements KW_ELSE statements KW_END KW_IF
+ | KW_IF condition KW_THEN statements KW_END KW_IF 
+ ;
+
+condition
+ : boolean_expr {
+    if ($1.typeID != T_BOOLEAN)
+        semanticError("operand of if statement is not boolean type");
+   } 
  ;
 
 while_statement 
- : KW_WHILE boolean_expr KW_DO statements KW_END KW_DO
+ : KW_WHILE boolean_expr {
+    if ($2.typeID != T_BOOLEAN)
+        semanticError("operand of while statement is not boolean type");
+   } KW_DO statements KW_END KW_DO
  ;
 
 for_statement 
@@ -276,6 +287,9 @@ for_statement
             ste.type.dimensions.clear();
             symTable.back().entries.push_back(ste);
         }
+
+        if ($4 > $6)
+            semanticError("loop parameter's lower bound > uppper bound");
     }
     statements 
     { pop_SymbolTable(false); }
@@ -319,15 +333,86 @@ expression_list
 
 expression
  : operand { $$ = $1; }
- | expression operator_arithmetic expression
- | expression operator_compare expression
- | expression operator_logical expression
- | NOT expression
- | L_PAREN expression R_PAREN
+ | expression operator_arithmetic expression {
+    char buf[300];
+    if ($1.typeID == T_ERROR) {
+        semanticError("error in left operand of '+' operator");
+        $$.typeID = T_ERROR;
+    } else if ($3.typeID == T_ERROR) {
+        semanticError("error in right operand of '+' operator");
+        $$.typeID = T_ERROR;
+    } else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
+        sprintf(buf, "one of the operands of operator '%s' is array type", $2.stringValue);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if ($1.typeID == T_STRING && $3.typeID == T_STRING && strcmp($2.stringValue, "+") == 0) {
+        $$.typeID = T_STRING;
+    } else if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
+               ($3.typeID != T_INTEGER && $3.typeID != T_REAL)) {
+        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2.stringValue);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
+        $$.typeID = T_INTEGER;
+    } else {
+        $$.typeID = T_REAL;
+    }
+   }
+ | expression operator_compare expression {
+    char buf[300];
+    if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
+        $$.typeID = T_ERROR;
+    else if (($1.typeID == T_INTEGER || $1.typeID == T_INTEGER) && ($1.typeID == $3.typeID)) {
+        $$.typeID = T_BOOLEAN;
+    } else {
+        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2.stringValue);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    }
+   }
+ | expression MOD expression {
+    if ($1.typeID != T_INTEGER || $3.typeID != T_INTEGER) {
+        semanticError("one of the operands of operator 'mod' is not integer");
+        $$.typeID = T_ERROR;
+    } else {
+        $$.typeID = T_INTEGER;
+    }
+   }
+ | expression operator_logical expression {
+    char buf[300];
+    if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
+        $$.typeID = T_ERROR;
+    else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
+        $$.typeID = T_BOOLEAN;
+    } else {
+        sprintf(buf, "one of the operands of operator '%s' is not boolean", $2.stringValue);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    }
+   }
+ | NOT expression {
+
+    if ($2.typeID == T_ERROR)
+        $$.typeID = T_ERROR;
+    else if ($2.typeID == T_BOOLEAN) {
+        $$.typeID = T_BOOLEAN;
+    } else {
+        semanticError("operand of operator 'not' is not boolean");
+        $$.typeID = T_ERROR;
+    }
+   }
+ | L_PAREN expression R_PAREN {
+    $$ = $2;
+   }
  ;
 
 boolean_expr
- : expression
+ : expression {
+    if ($1.typeID == T_BOOLEAN && $1.dimensions.size() == 0)
+        $$ = $1;
+    else
+        $$.typeID = T_ERROR;
+   }
  ;
 
 integer_expr
@@ -366,7 +451,7 @@ operator_compare
  ;
 
 operator_arithmetic
- : ADD | SUB | MUL | DIV | MOD
+ : ADD | SUB | MUL | DIV
  ;
 
 function_invocation

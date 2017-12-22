@@ -33,21 +33,21 @@ letter [a-zA-Z]
 "["     { tokenChar(yytext[0]); return L_BRACKET;}
 "]"     { tokenChar(yytext[0]); return R_BRACKET;}
 
-"+"     { tokenChar('+'); return ADD;}
-"-"     { tokenChar('-'); return SUB;}
-"*"     { tokenChar('*'); return MUL;}
-"/"     { tokenChar('/'); return DIV;}
-"mod"   { token(mod); return MOD;}
+"+"     { tokenChar('+'); yylval.stringValue=strdup(yytext); return ADD;}
+"-"     { tokenChar('-'); yylval.stringValue=strdup(yytext); return SUB;}
+"*"     { tokenChar('*'); yylval.stringValue=strdup(yytext); return MUL;}
+"/"     { tokenChar('/'); yylval.stringValue=strdup(yytext); return DIV;}
+"mod"   { token(mod); yylval.stringValue=strdup(yytext); return MOD;}
 ":="    { token(:=); return ASSIGN;}
-"<"     { tokenChar('<'); return LESS;}
-"<="    { token(<=); return LESS_EQU;}
-"<>"    { token(<>); return NOT_EQU;}
-">="    { token(>=); return GREAT_EQU;}
-">"     { tokenChar('>'); return GREAT;}
-"="     { tokenChar('='); return EQU;}
-"and"   { token(and); return AND;}
-"or"    { token(or); return OR;}
-"not"   { token(not); return NOT;}
+"<"     { tokenChar('<'); yylval.stringValue=strdup(yytext); return LESS;}
+"<="    { token(<=); yylval.stringValue=strdup(yytext); return LESS_EQU;}
+"<>"    { token(<>); yylval.stringValue=strdup(yytext); return NOT_EQU;}
+">="    { token(>=); yylval.stringValue=strdup(yytext); return GREAT_EQU;}
+">"     { tokenChar('>'); yylval.stringValue=strdup(yytext); return GREAT;}
+"="     { tokenChar('='); yylval.stringValue=strdup(yytext); return EQU;}
+"and"   { token(and); yylval.stringValue=strdup(yytext); return AND;}
+"or"    { token(or); yylval.stringValue=strdup(yytext); return OR;}
+"not"   { token(not); yylval.stringValue=strdup(yytext); return NOT;}
 
 "array"   { token(KWarray); return KW_ARRAY; }
 "begin"   { token(KWbegin); return KW_BEGIN; }
