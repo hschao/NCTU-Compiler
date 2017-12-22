@@ -71,9 +71,9 @@ private:
 void push_SymbolTable(bool isVisible);
 void pop_SymbolTable(bool print);
 bool checkLoopVarRedeclare(char* name);
-SymbolTableEntry* getLastFunc();
-SymbolTableEntry* findSymbol(std::string name);
-SymbolTableEntry* findFunction(std::string name);
+SymbolTableEntry getLastFunc();
+SymbolTableEntry findSymbol(std::string name);
+SymbolTableEntry findFunction(std::string name);
 
 extern std::vector<SymbolTable> symTable;
 

@@ -271,10 +271,13 @@ return_statement
  : KW_RETURN expression SEMICOLON {
     if (isParsingProgram)
         semanticError("program cannot be returned");
-    // else {
-    //     SymbolTableEntry* p = getLastFunc();
-    //     if (p->)
-    // }
+    else {
+        SymbolTableEntry p = getLastFunc();
+        if (p.type.acceptable($2) == E_TYPE_MISMATCH)
+            semanticError("return type mismatch");
+        else if (p.type.acceptable($2) == E_DIM_MISMATCH)
+            semanticError("return dimension number mismatch");
+    }
    }
  ;
 
@@ -344,9 +347,8 @@ operator_arithmetic
 function_invocation
  : IDENT L_PAREN expressions R_PAREN { 
     $$.typeID = T_ERROR;
-    SymbolTableEntry* p = findFunction($1);
-    if (p!=NULL)
-        $$ = p->type;
+    SymbolTableEntry p = findFunction($1);
+    $$ = p.type;
    }
  ;
 
@@ -354,13 +356,13 @@ variable_reference
  : IDENT reference_list {
     $$.kind = K_VAR;
     $$.type.typeID = T_ERROR;
-    SymbolTableEntry* p = findSymbol($1);
-    if (p!=NULL) {
+    SymbolTableEntry p = findSymbol($1);
+    if (p.type.typeID!=T_ERROR) {
         char buf[300];
 
-        $$ = *p;
-        if (p->kind == K_PARAM || p->kind == K_VAR || p->kind == K_CONST || p->kind == K_LOOP_VAR) {
-            int dim = p->type.dimensions.size();
+        $$ = p;
+        if (p.kind == K_PARAM || p.kind == K_VAR || p.kind == K_CONST || p.kind == K_LOOP_VAR) {
+            int dim = p.type.dimensions.size();
             if ($2 > dim) {
                 sprintf(buf, "'%s' is %d dimension(s), but reference in %d dimension(s)", $1, dim, $2);
                 semanticError(buf);
