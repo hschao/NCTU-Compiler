@@ -12,6 +12,7 @@ typedef struct
   Variant variant;
   std::vector<std::string> ids;
   std::vector<Arg> args;
+  std::vector<Type> params;
   Type type;
   TypeID typeID;
   SymbolTableEntry entry;

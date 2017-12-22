@@ -31,8 +31,9 @@ void semanticError( string msg );
 %type <typeID> scalar_type
 %type <type> type function_return_type expression operand
 %type <type> function_invocation
-%type <args> arguments argument_list argument
+%type <args> arguments argument_list argument 
 %type <entry> variable_reference
+%type <params> expressions expression_list
 
 %left OR
 %left AND
@@ -295,13 +296,18 @@ function_invocation_statement
 
 /* common grammar */
 expressions
- : empty
- | expression_list
+ : empty { $$.clear(); }
+ | expression_list { 
+    $$ = $1;
+   }
  ;
 
 expression_list
- : expression_list COMMA expression
- | expression
+ : expression_list COMMA expression { $$=$1; $$.push_back( $3 ); }
+ | expression { 
+    $$.clear();
+    $$.push_back($1); 
+   }
  ;
 
 expression
@@ -355,7 +361,27 @@ function_invocation
  : IDENT L_PAREN expressions R_PAREN { 
     $$.typeID = T_ERROR;
     SymbolTableEntry p = findFunction($1);
-    $$ = p.type;
+    if (p.type.typeID != T_ERROR){
+        char buf[300];
+        if ($3.size() < p.attr.paramLst.size()) {
+            sprintf(buf, "too few arguments to function '%s'", $1);
+            semanticError(buf);
+        } else if ($3.size() > p.attr.paramLst.size()) {
+            sprintf(buf, "too many arguments to function '%s'", $1);
+            semanticError(buf);
+        } else {
+            bool allMatch = true;
+            for (int i=0; i<$3.size(); i++)
+                if ($3[i].typeID != p.attr.paramLst[i].typeID || $3[i].dimensions != p.attr.paramLst[i].dimensions) {
+                    allMatch = false;
+                    semanticError("parameter type mismatch");
+                    break;
+                }
+
+            if (allMatch)
+                $$ = p.type;
+        }
+    }
    }
  ;
 
