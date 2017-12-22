@@ -29,7 +29,7 @@ void semanticError( string msg );
 %type <intValue> integer_constant reference_list
 %type <ids> identifier_list
 %type <typeID> scalar_type
-%type <type> type function_return_type expression operand
+%type <type> type function_return_type expression operand integer_expr boolean_expr
 %type <type> function_invocation
 %type <args> arguments argument_list argument 
 %type <entry> variable_reference
@@ -88,7 +88,7 @@ function_declaration
         symTable.back().addParameters($3);
         symTable[symTable.size()-2].addFunction($1, $3, $5);
         
-        if ($5.dimensions.size() != 0)
+        if ($5.typeID == T_ERROR || $5.dimensions.size() != 0)
             semanticError("a function cannot return an array type");
     }    
     compound_statement 
@@ -96,7 +96,7 @@ function_declaration
     if (strcmp($1, $10) != 0)
         semanticError("the end of the functionName mismatch");
 
-    if ($5.dimensions.size() != 0)
+    if ($5.typeID == T_ERROR || $5.dimensions.size() != 0)
         for(int i=0; i<symTable[0].entries.size(); i++)
             if (strcmp(symTable[0].entries[i].name, $1) == 0) {
                 symTable[0].entries.erase(symTable[0].entries.begin()+i);
@@ -137,7 +137,14 @@ argument
 
 variable_declaration
  : KW_VAR identifier_list COLON type SEMICOLON {
-       symTable.back().addVariables($2, $4);
+    if ($4.typeID == T_ERROR) {
+        string msg = "wrong dimension declaration for array " + $2[0];
+        for (int i=1; i<$2.size(); ++i)
+            msg += ", " + $2[i];
+        semanticError(msg);
+    }
+    else
+        symTable.back().addVariables($2, $4);
    }
  ;
 
@@ -324,7 +331,12 @@ boolean_expr
  ;
 
 integer_expr
- : expression
+ : expression {
+    if ($1.typeID == T_INTEGER && $1.dimensions.size() == 0)
+        $$ = $1;
+    else
+        $$.typeID = T_ERROR;
+   }
  ;
 
 operand 
@@ -372,7 +384,7 @@ function_invocation
         } else {
             bool allMatch = true;
             for (int i=0; i<$3.size(); i++)
-                if ($3[i].typeID != p.attr.paramLst[i].typeID || $3[i].dimensions != p.attr.paramLst[i].dimensions) {
+                if (p.attr.paramLst[i].acceptable($3[i]) != E_OK) {
                     allMatch = false;
                     semanticError("parameter type mismatch");
                     break;
@@ -396,7 +408,10 @@ variable_reference
         $$ = p;
         if (p.kind == K_PARAM || p.kind == K_VAR || p.kind == K_CONST || p.kind == K_LOOP_VAR) {
             int dim = p.type.dimensions.size();
-            if ($2 > dim) {
+            if ($2 == -1) {
+                semanticError("array index is not integer");
+                $$.type.typeID = T_ERROR;
+            } else if ($2 > dim) {
                 sprintf(buf, "'%s' is %d dimension(s), but reference in %d dimension(s)", $1, dim, $2);
                 semanticError(buf);
                 $$.type.typeID = T_ERROR;
@@ -410,7 +425,12 @@ variable_reference
  ;
 
 reference_list
- : reference_list L_BRACKET integer_expr R_BRACKET { $$ = $1 + 1;}
+ : reference_list L_BRACKET integer_expr R_BRACKET { 
+    if ($1 != -1 && $3.typeID == T_INTEGER)
+        $$ = $1 + 1;
+    else
+        $$ = -1;
+   }
  | empty { $$ = 0; }
  ;
 
@@ -419,9 +439,16 @@ type
      $$.typeID = $1;
    }
  | KW_ARRAY integer_constant KW_TO integer_constant KW_OF type {
-     $$.typeID = $6.typeID;
-     $$.dimensions = $6.dimensions;
-     $$.dimensions.insert($$.dimensions.begin(),$4-$2+1);
+    $$.typeID = $6.typeID;
+    if ($$.typeID != T_ERROR){
+        if ($4 >= $2) {
+            $$.dimensions = $6.dimensions;
+            $$.dimensions.insert($$.dimensions.begin(),$4-$2+1);  
+        } else {
+            $$.typeID = T_ERROR;
+            $$.dimensions.clear();
+        }
+    }
    }
  ;
 

@@ -219,7 +219,7 @@ SymbolTableEntry getLastFunc() {
 SymbolTableEntry findSymbol(string name) {
   for(int i=symTable.size()-1; i>=0; i--)
     for(int j=0; j<symTable[i].entries.size(); j++)
-      if (strcmp(symTable[i].entries[j].name, name.c_str()) == 0)
+      if (symTable[i].entries[j].kind != K_FUNC && strcmp(symTable[i].entries[j].name, name.c_str()) == 0)
         return symTable[i].entries[j];
   string msg = "'" + name + "' is not declared";
   semanticError(msg.c_str());

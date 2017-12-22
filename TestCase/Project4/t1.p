@@ -1,19 +1,36 @@
 //&S-
 //&T-
-//&D-
+//&D+
 /**
- * semtest3.p : check array type properties 
+ * semtest5.p: test for program name
  */
-semtest3;
+test;
 
-fun( a : array 1 to 5 of integer ) : array 1 to 5 of integer; // return type of function cannot be array type -> this is not a valid function declaration -> we don't insert fun to symbol table
+var aa,bd,ddd : array 7 to 5 of array 1 to 5 of array 1 to 5 of integer; // 1D integer array , size=10
+var aa : real;
+var c : 123;
+
+fun2( a : array 1 to 5 of integer ): array 8 to 5 of integer; // valid function declaration -> func2 will be inserted to symbol table
 begin
-    var a : integer;
+    var i : array 8 to 17 of integer;
+    i[test] := i[5];
+    i[fun2] := i[5.0];
+    i[i] := i["111"];
+    i[a[0]] := i["111"];
+    i[7] := i[c];
+    i := 1;
+    while i <= 5.0 do
+        a[i] := i*i;
+    end do
+    
+    return i;        // error, return an array
 end
 end funk
 
-// main program
 begin
-
+    fun2(aa);
+    return aa;
+    fun(a);
+    test();
 end
-end semtest3
+end test
