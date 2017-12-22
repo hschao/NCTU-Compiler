@@ -10,10 +10,17 @@ typedef enum {
   T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_NONE, T_ERROR
 } TypeID;
 
-typedef struct {
+typedef enum {
+  E_OK, E_TYPE_MISMATCH, E_DIM_MISMATCH
+} TypeAccepct;
+
+class Type {
+public:
   TypeID typeID;
   std::vector<int> dimensions;
-} Type;
+  std::string toString();
+  TypeAccepct acceptable(Type t);
+};
 
 typedef struct {
   TypeID typeID;
@@ -59,7 +66,6 @@ public:
   std::vector<SymbolTableEntry> entries;
   int level;
 private:
-  char* TypeToString(char* buf, Type t);
 };
 
 void push_SymbolTable(bool isVisible);

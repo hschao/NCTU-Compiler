@@ -6,7 +6,37 @@ extern void semanticError( string msg );
 
 vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
-const char* typeToStr[] = {"integer", "real", "boolean", "string", "void"};
+const char* typeToStr[] = {"integer", "real", "boolean", "string", "void", ""};
+
+string Type::toString() {
+  bool isArray = (dimensions.size() > 0);
+  string result = typeToStr[typeID];
+  if (isArray) {
+    result += " ";
+    for(int j=0; j<dimensions.size(); j++) {
+      char buf[30];
+      sprintf(buf, "[%d]", dimensions[j]);
+      result += buf;
+    }
+  }
+  return result;
+}
+
+TypeAccepct Type::acceptable(Type t) {
+  bool typeAcceptable = false;
+  if (typeID == t.typeID)
+    typeAcceptable = true;
+  else if (this->typeID == T_REAL && t.typeID == T_INTEGER)
+    typeAcceptable = true;
+
+  if (!typeAcceptable)
+    return E_TYPE_MISMATCH;
+
+  if (this->dimensions != t.dimensions)
+    return E_DIM_MISMATCH;
+
+  return E_OK;
+}
 
 SymbolTable::SymbolTable(int level) {
   this->level = level;
@@ -37,20 +67,16 @@ void SymbolTable::PrintTable() {
     printf("%d%-10s", level, (level==0? "(global)": "(local)"));
 
     // Type
-    char buf[200];
-    TypeToString(buf, entries[i].type);
-    printf("%-17s", buf);  
+    printf("%-17s", entries[i].type.toString().c_str());  
 
     // Attribute
     std::string output;
     if (entries[i].kind == K_FUNC) {
       if (entries[i].attr.paramLst.size() > 0) {
         std::vector<Type> v = entries[i].attr.paramLst;
-        output = TypeToString(buf, v[0]);
-        for(int k=1; k<v.size(); k++) {
-          output += ", " ;
-          output += TypeToString(buf, v[k]);
-        }
+        output = v[0].toString();
+        for(int k=1; k<v.size(); k++)
+          output += ", " + v[k].toString();
         printf("%-11s", output.c_str());
       }
     } else if (entries[i].kind == K_CONST) {
@@ -141,19 +167,6 @@ bool SymbolTable::addEntry(SymbolTableEntry &ste) {
   return true;
 }
 
-char* SymbolTable::TypeToString(char* buf, Type t) {
-
-  bool isArray = (t.dimensions.size() > 0);
-  int i = sprintf(buf, isArray? "%s ": "%s", typeToStr[t.typeID]);
-  if (isArray) {
-    for(int j=0; j<t.dimensions.size(); j++) {
-      int dim = t.dimensions[j];
-      i += sprintf(buf+i, "[%d]", dim);
-    }
-  }
-  return buf;
-}
-
 SymbolTableEntry::~SymbolTableEntry() {
   // if (kind == K_FUNC && attr.paramLst != NULL)
   //   delete attr.paramLst;
@@ -204,7 +217,7 @@ SymbolTableEntry* findSymbol(string name) {
     for(int j=0; j<symTable[i].entries.size(); j++)
       if (strcmp(symTable[i].entries[j].name, name.c_str()) == 0)
         return &symTable[i].entries[j];
-  string msg = "symbol '" + name + "' not found";
+  string msg = "'" + name + "' is not declared";
   semanticError(msg.c_str());
   return NULL;
 }
@@ -214,7 +227,7 @@ SymbolTableEntry* findFunction(string name) {
   for(int j=0; j<symTable[0].entries.size(); j++)
     if (strcmp(symTable[0].entries[j].name, name.c_str()) == 0 && symTable[0].entries[j].kind == K_FUNC)
       return &symTable[0].entries[j];
-  string msg = "symbol '" + name + "' not found";
+  string msg = "'" + name + "' is not declared";
   semanticError(msg.c_str());
   return NULL;
 }

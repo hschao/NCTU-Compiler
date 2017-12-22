@@ -14,6 +14,7 @@ typedef struct
   std::vector<Arg> args;
   Type type;
   TypeID typeID;
+  SymbolTableEntry entry;
 } yylvalType;
 
 #define YYSTYPE yylvalType

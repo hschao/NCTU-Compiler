@@ -30,8 +30,9 @@ void semanticError( string msg );
 %type <ids> identifier_list
 %type <typeID> scalar_type
 %type <type> type function_return_type expression operand
-%type <type> variable_reference function_invocation
+%type <type> function_invocation
 %type <args> arguments argument_list argument
+%type <entry> variable_reference
 
 %left OR
 %left AND
@@ -182,11 +183,58 @@ compound_statement
 
 simple_statement
  : variable_reference ASSIGN expression SEMICOLON {
-
+    char buf[300];
+    if ($1.kind == K_PROG) {
+        sprintf(buf, "'%s' is program", $1.name);
+        semanticError(buf);
+    } else if ($1.kind == K_FUNC) {
+        sprintf(buf, "'%s' is function", $1.name);
+        semanticError(buf);
+    } else if ($1.kind == K_PARAM || $1.kind == K_VAR) {
+        if ($1.type.typeID != T_ERROR) {
+            if ($3.typeID == T_ERROR)
+                semanticError("error type in RHS of assignment");
+            if ($3.typeID != T_ERROR || $1.type.dimensions.size() > 0) {
+                if ($1.type.acceptable($3) != E_OK) {
+                    sprintf(buf, "type mismatch, LHS= %s, RHS= %s", $1.type.toString().c_str(), $3.toString().c_str());
+                    semanticError(buf);
+                } else if ( $1.type.dimensions.size() > 0 ) 
+                    semanticError("array assignment is not allowed");
+            }
+        }    
+    } else if ($1.kind == K_CONST) {
+        sprintf(buf, "constant '%s' cannot be assigned", $1.name);
+        semanticError(buf);
+    } else if ($1.kind == K_LOOP_VAR) {
+        sprintf(buf, "loop variable '%s' cannot be assigned", $1.name);
+        semanticError(buf);
+    } 
    }
- | KW_PRINT variable_reference SEMICOLON
+ | KW_PRINT variable_reference SEMICOLON {
+    if ($2.kind == K_PROG) {
+        sprintf(buf, "'%s' is program", $2.name);
+        semanticError(buf);
+    } else if ($2.kind == K_FUNC) {
+        sprintf(buf, "'%s' is function", $2.name);
+        semanticError(buf);
+    }  else if ($2.kind == K_PARAM || $2.kind == K_VAR) {
+        if ($2.type.dimensions.size() > 0)
+            semanticError("operand of print statement is array type");
+    } 
+   }
  | KW_PRINT expression SEMICOLON
- | KW_READ variable_reference SEMICOLON
+ | KW_READ variable_reference SEMICOLON {
+    if ($2.kind == K_PROG) {
+        sprintf(buf, "'%s' is program", $2.name);
+        semanticError(buf);
+    } else if ($2.kind == K_FUNC) {
+        sprintf(buf, "'%s' is function", $2.name);
+        semanticError(buf);
+    }  else if ($2.kind == K_PARAM || $2.kind == K_VAR) {
+        if ($2.type.dimensions.size() > 0)
+            semanticError("operand of print statement is array type");
+    } 
+   }
  ;
 
 conditional_statement 
@@ -224,7 +272,7 @@ return_statement
     if (isParsingProgram)
         semanticError("program cannot be returned");
     // else {
-    //     SymbolTableEntry* p = symTable.getLastFunc();
+    //     SymbolTableEntry* p = getLastFunc();
     //     if (p->)
     // }
    }
@@ -264,7 +312,19 @@ integer_expr
  ;
 
 operand 
- : variable_reference { $$ = $1; }
+ : variable_reference { 
+
+    $$ = $1.type;
+    if ($1.kind == K_PROG) {
+        $$.typeID = T_ERROR;
+        sprintf(buf, "'%s' is program", $1.name);
+        semanticError(buf);
+    } else if ($1.kind == K_FUNC) {
+        $$.typeID = T_ERROR;
+        sprintf(buf, "'%s' is function", $1.name);
+        semanticError(buf);
+    } 
+   }
  | literal_constant { $$.typeID = $1.typeID; }
  | function_invocation { $$ = $1; }
  ;
@@ -292,18 +352,23 @@ function_invocation
 
 variable_reference
  : IDENT reference_list {
-    $$.typeID = T_ERROR;
+    $$.kind = K_VAR;
+    $$.type.typeID = T_ERROR;
     SymbolTableEntry* p = findSymbol($1);
     if (p!=NULL) {
-        int dim = p->type.dimensions.size();
-        if ($2 > dim) {
-            char buf[300];
-            sprintf(buf, "'%s' is %d dimension(s), but reference in %d dimension(s)", $1, dim, $2);
-            semanticError(buf);
-        } else {
-            $$ = p->type;
-            if ($2 > 0)
-                $$.dimensions.erase($$.dimensions.begin(), $$.dimensions.begin() + $2);
+        char buf[300];
+
+        $$ = *p;
+        if (p->kind == K_PARAM || p->kind == K_VAR || p->kind == K_CONST || p->kind == K_LOOP_VAR) {
+            int dim = p->type.dimensions.size();
+            if ($2 > dim) {
+                sprintf(buf, "'%s' is %d dimension(s), but reference in %d dimension(s)", $1, dim, $2);
+                semanticError(buf);
+                $$.type.typeID = T_ERROR;
+            } else {
+                if ($2 > 0)
+                    $$.type.dimensions.erase($$.type.dimensions.begin(), $$.type.dimensions.begin() + $2);
+            }
         }
     }
    }
