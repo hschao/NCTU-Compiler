@@ -35,6 +35,7 @@ void semanticError( string msg );
 %type <args> arguments argument_list argument 
 %type <entry> variable_reference
 %type <params> expressions expression_list
+%type <stringValue> operator_arithmetic operator_compare operator_logical
 
 %left OR
 %left AND
@@ -342,14 +343,14 @@ expression
         semanticError("error in right operand of '+' operator");
         $$.typeID = T_ERROR;
     } else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
-        sprintf(buf, "one of the operands of operator '%s' is array type", $2.stringValue);
+        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
         semanticError(buf);
         $$.typeID = T_ERROR;
-    } else if ($1.typeID == T_STRING && $3.typeID == T_STRING && strcmp($2.stringValue, "+") == 0) {
+    } else if ($1.typeID == T_STRING && $3.typeID == T_STRING && strcmp($2, "+") == 0) {
         $$.typeID = T_STRING;
     } else if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
                ($3.typeID != T_INTEGER && $3.typeID != T_REAL)) {
-        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2.stringValue);
+        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
         semanticError(buf);
         $$.typeID = T_ERROR;
     } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
@@ -365,7 +366,7 @@ expression
     else if (($1.typeID == T_INTEGER || $1.typeID == T_INTEGER) && ($1.typeID == $3.typeID)) {
         $$.typeID = T_BOOLEAN;
     } else {
-        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2.stringValue);
+        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
         semanticError(buf);
         $$.typeID = T_ERROR;
     }
@@ -385,7 +386,7 @@ expression
     else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
         $$.typeID = T_BOOLEAN;
     } else {
-        sprintf(buf, "one of the operands of operator '%s' is not boolean", $2.stringValue);
+        sprintf(buf, "one of the operands of operator '%s' is not boolean", $2);
         semanticError(buf);
         $$.typeID = T_ERROR;
     }
@@ -443,15 +444,24 @@ operand
  ;
 
 operator_logical
- : OR | AND
+ : OR  { $$ = $1; }
+ | AND  { $$ = $1; }
  ;
 
 operator_compare
- : GREAT | GREAT_EQU | EQU | LESS_EQU | LESS | NOT_EQU
+ : GREAT  { $$ = $1; }
+ | GREAT_EQU  { $$ = $1; }
+ | EQU  { $$ = $1; }
+ | LESS_EQU  { $$ = $1; }
+ | LESS  { $$ = $1; }
+ | NOT_EQU { $$ = $1; }
  ;
 
 operator_arithmetic
- : ADD | SUB | MUL | DIV
+ : ADD { $$ = $1; }
+ | SUB  { $$ = $1; }
+ | MUL  { $$ = $1; }
+ | DIV { $$ = $1; }
  ;
 
 function_invocation
