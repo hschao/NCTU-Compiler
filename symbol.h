@@ -1,6 +1,8 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <cstdio>
+#include <cstdlib>
 
 typedef enum {
   K_PROG, K_FUNC, K_PARAM, K_VAR, K_CONST, K_LOOP_VAR

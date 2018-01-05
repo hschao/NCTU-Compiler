@@ -90,7 +90,7 @@ function_declaration
         symTable.back().addParameters($3);
         symTable[symTable.size()-2].addFunction($1, $3, $5);
         
-        if ($5.typeID == T_ERROR || $5.dimensions.size() != 0)
+        if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
             semanticError("a function cannot return an array type");
     }    
     compound_statement 
@@ -98,7 +98,7 @@ function_declaration
     if (strcmp($1, $10) != 0)
         semanticError("the end of the functionName mismatch");
 
-    if ($5.typeID == T_ERROR || $5.dimensions.size() != 0)
+        if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
         for(int i=0; i<symTable[0].entries.size(); i++)
             if (strcmp(symTable[0].entries[i].name, $1) == 0) {
                 symTable[0].entries.erase(symTable[0].entries.begin()+i);
@@ -109,7 +109,7 @@ function_declaration
 
 function_return_type
  : COLON type { $$ = $2; }
- | empty { $$.typeID = T_NONE; }
+ | empty { $$.typeID = T_NONE; $$.dimensions.clear(); }
  ;
 
 arguments
@@ -126,11 +126,18 @@ argument_list
 
 argument
  : identifier_list COLON type { 
-    for(int i=0; i<$1.size(); i++) {
-      Arg arg;
-      arg.name = $1[i];
-      arg.t = $3;
-      $$.push_back(arg); 
+    if ($3.typeID == T_ERROR) {
+        string msg = "wrong dimension declaration for array " + $1[0];
+        for (int i=1; i<$1.size(); ++i)
+            msg += ", " + $1[i];
+        semanticError(msg);
+    } else {
+        for(int i=0; i<$1.size(); i++) {
+          Arg arg;
+          arg.name = $1[i];
+          arg.t = $3;
+          $$.push_back(arg); 
+        }
     }
    }
  ;
@@ -303,9 +310,9 @@ return_statement
         semanticError("program cannot be returned");
     else {
         SymbolTableEntry p = getLastFunc();
-        if (p.type.acceptable($2) == E_TYPE_MISMATCH)
+        if (p.type.typeID != $2.typeID)
             semanticError("return type mismatch");
-        else if (p.type.acceptable($2) == E_DIM_MISMATCH)
+        else if (p.type.dimensions.size() != $2.dimensions.size())
             semanticError("return dimension number mismatch");
     }
    }
@@ -363,7 +370,11 @@ expression
     char buf[300];
     if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
         $$.typeID = T_ERROR;
-    else if (($1.typeID == T_INTEGER || $1.typeID == T_INTEGER) && ($1.typeID == $3.typeID)) {
+    else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
+        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if (($1.typeID == T_INTEGER || $1.typeID == T_REAL) && ($1.typeID == $3.typeID)) {
         $$.typeID = T_BOOLEAN;
     } else {
         sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
@@ -375,6 +386,10 @@ expression
     if ($1.typeID != T_INTEGER || $3.typeID != T_INTEGER) {
         semanticError("one of the operands of operator 'mod' is not integer");
         $$.typeID = T_ERROR;
+    } else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
+        sprintf(buf, "one of the operands of operator 'mod' is array type");
+        semanticError(buf);
+        $$.typeID = T_ERROR;
     } else {
         $$.typeID = T_INTEGER;
     }
@@ -383,7 +398,11 @@ expression
     char buf[300];
     if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
         $$.typeID = T_ERROR;
-    else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
+    else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
+        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
         $$.typeID = T_BOOLEAN;
     } else {
         sprintf(buf, "one of the operands of operator '%s' is not boolean", $2);
@@ -395,10 +414,31 @@ expression
 
     if ($2.typeID == T_ERROR)
         $$.typeID = T_ERROR;
-    else if ($2.typeID == T_BOOLEAN) {
+    else if ($2.dimensions.size()>0){
+        sprintf(buf, "operand of operator 'not' is array type");
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if ($2.typeID == T_BOOLEAN) {
         $$.typeID = T_BOOLEAN;
     } else {
         semanticError("operand of operator 'not' is not boolean");
+        $$.typeID = T_ERROR;
+    }
+   }
+ | SUB expression {
+
+    if ($2.typeID == T_ERROR)
+        $$.typeID = T_ERROR;
+    else if ($2.dimensions.size()>0){
+        sprintf(buf, "operand of operator 'negative' is array type");
+        semanticError(buf);
+        $$.typeID = T_ERROR;
+    } else if ($2.typeID == T_INTEGER) {
+        $$.typeID = T_INTEGER;
+    } else if ($2.typeID == T_REAL) {
+        $$.typeID = T_REAL;
+    } else {
+        semanticError("operand of operator 'negative' is not number");
         $$.typeID = T_ERROR;
     }
    }
@@ -536,7 +576,7 @@ type
  | KW_ARRAY integer_constant KW_TO integer_constant KW_OF type {
     $$.typeID = $6.typeID;
     if ($$.typeID != T_ERROR){
-        if ($4 >= $2) {
+        if ($4 > $2) {
             $$.dimensions = $6.dimensions;
             $$.dimensions.insert($$.dimensions.begin(),$4-$2+1);  
         } else {
