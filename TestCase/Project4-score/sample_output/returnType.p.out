@@ -1,0 +1,5 @@
+<Error> found in Line 8: void function cannot be returned
+<Error> found in Line 14: return type mismatch
+<Error> found in Line 20: return type mismatch
+<Error> found in Line 26: return dimension number mismatch
+<Error> found in Line 32: return type mismatch

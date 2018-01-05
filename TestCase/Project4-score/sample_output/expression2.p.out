@@ -1,0 +1,11 @@
+<Error> found in Line 10: one of the operands of operator 'or' is not boolean
+<Error> found in Line 10: error type in RHS of assignment
+<Error> found in Line 12: operands of operator '=' are not both integer or both real
+<Error> found in Line 12: error type in RHS of assignment
+<Error> found in Line 21: operands of operator '/' are not both integer or both real
+<Error> found in Line 21: error type in RHS of assignment
+<Error> found in Line 22: operands of operator '*' are not both integer or both real
+<Error> found in Line 22: error type in RHS of assignment
+<Error> found in Line 28: operand of unary - is not integer/real
+<Error> found in Line 28: error in left operand of 'and' operator
+<Error> found in Line 28: error type in RHS of assignment

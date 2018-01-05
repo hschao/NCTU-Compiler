@@ -1,0 +1,4 @@
+<Error> found in Line 11: operand of while statement is not boolean type
+<Error> found in Line 14: constant 'ret' cannot be assigned
+<Error> found in Line 21: return type mismatch
+<Error> found in Line 34: type mismatch, LHS= integer, RHS= boolean

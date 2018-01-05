@@ -1,0 +1,6 @@
+<Error> found in Line 14: operand of if statement is not boolean type
+<Error> found in Line 28: operand of if statement is array type
+<Error> found in Line 41: one of the operands of operator 'mod' is not integer
+<Error> found in Line 41: operand of if statement is not boolean type
+<Error> found in Line 44: one of the operands of operator 'and' is array type
+<Error> found in Line 44: operand of if statement is not boolean type

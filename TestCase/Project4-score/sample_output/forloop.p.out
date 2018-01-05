@@ -1,0 +1,3 @@
+<Error> found in Line 9: loop parameter's lower bound > uppper bound
+<Error> found in Line 17: symbol 'i' is redeclared
+<Error> found in Line 26: loop variable 'i' cannot be assigned

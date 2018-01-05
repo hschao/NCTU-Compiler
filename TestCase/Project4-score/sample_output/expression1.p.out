@@ -1,0 +1,5 @@
+<Error> found in Line 10: one of the operands of operator '*' is string type
+<Error> found in Line 19: one of the operands of operator '/' is array type
+<Error> found in Line 19: error type in RHS of assignment
+<Error> found in Line 29: one of the operands of operator 'mod' is not integer
+<Error> found in Line 29: error type in RHS of assignment

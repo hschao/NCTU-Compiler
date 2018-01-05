@@ -1,0 +1,2 @@
+<Error> found in Line 10: type mismatch, LHS= boolean, RHS= string
+<Error> found in Line 20: constant 'p' cannot be assigned
