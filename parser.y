@@ -15,6 +15,14 @@ bool isParsingProgram = false;
 int yylex();
 int yyerror( const char *msg );
 void semanticError( string msg );
+
+void _out(const char *fmt, ...) { 
+  va_list args;
+  va_start (args, fmt);
+  vprintf (fmt, args);
+  printf ("\n");
+  va_end (args);
+}
 %}
 
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
@@ -53,6 +61,13 @@ program
 
     push_SymbolTable(true);
     symTable.back().addProgram($1);
+
+    // Generate java bytecode
+    _out("; %s.j ", $1);
+    _out(".class public %s ", $1);
+    _out(".super java/lang/Object ");
+    _out(".field public static _sc Ljava/util/Scanner; ");
+
    } programbody KW_END IDENT { 
     pop_SymbolTable(Opt_D);
 
@@ -64,7 +79,24 @@ program
  ;
 
 programbody
- : var_constant_declarations function_declarations { isParsingProgram=true; } compound_statement
+ : var_constant_declarations function_declarations { 
+    isParsingProgram=true; 
+
+    // Generate java bytecode
+    _out("");
+    _out(".method public static main([Ljava/lang/String;)V ");
+    _out("\t.limit stack 100 ");
+    _out("\t.limit locals 100 ");
+    _out("\tnew java/util/Scanner "); 
+    _out("\tdup ");
+    _out("\tgetstatic java/lang/System/in Ljava/io/InputStream; ");
+    _out("\tinvokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V ");
+    _out("\tputstatic %s/_sc Ljava/util/Scanner; ", $<stringValue>-2);
+
+   } compound_statement {
+    _out("\treturn ");
+    _out(".end method ");
+   }
  ;
 
 var_constant_declarations
@@ -660,11 +692,11 @@ int  main( int argc, char **argv )
 
     yyin = fp;
     yyparse();
-    if (noError) {
-        printf("|-------------------------------------------|\n");
-        printf("| There is no syntactic and semantic error! |\n");
-        printf("|-------------------------------------------|\n");
-    }
+    // if (noError) {
+    //     printf("|-------------------------------------------|\n");
+    //     printf("| There is no syntactic and semantic error! |\n");
+    //     printf("|-------------------------------------------|\n");
+    // }
     exit(0);
 }
 

@@ -9,9 +9,9 @@
 #define tokenString(t, s)  {LIST; if (Opt_T) printf("<%s: %s>\n", t, (s));}
 #define MAX_LINE_LENG      556
 
-int Opt_S = 1;
-int Opt_T = 1;
-int Opt_D = 1;
+int Opt_S = 0;
+int Opt_T = 0;
+int Opt_D = 0;
 int linenum = 1;
 char buf[MAX_LINE_LENG];
 char strBuf[MAX_LINE_LENG];
