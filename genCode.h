@@ -6,7 +6,7 @@
 #include <cstring>
 #include <map>
 
-extern char typeCode[3];
+extern char typeCode[5];
 extern char arithCode[3];
 extern std::map<std::string, std::string> operatorCode;
 extern std::vector<int> labelStack;
@@ -24,5 +24,8 @@ void genStoreAndI2F();
 void genPrint(TypeID t);
 void genRead(SymbolTableEntry ste);
 void genRelOp(Type a, std::string op, Type b);
-
+void genFuncInvoke(SymbolTableEntry ste);
+void genFuncBegin(SymbolTableEntry ste);
+void genFuncEnd(Type t);
+void genReturn(Type t);
 #endif

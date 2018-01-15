@@ -7,7 +7,7 @@
 
 extern std::string fileName;
 
-char typeCode[3] = {'I', 'F', 'Z'};
+char typeCode[5] = {'I', 'F', 'Z', 'S', 'V'};
 char arithCode[3] = {'i', 'f', 'i'};
 std::map<std::string, std::string> operatorCode;
 std::vector<int> labelStack;
@@ -145,4 +145,48 @@ void genRelOp(Type a, std::string op, Type b)
     genCode(1, "iconst_1 ");//true
     genCode(0, "Lfalse_%d: ", labelStack.back());
     labelStack.pop_back();
+}
+
+void genFuncInvoke(SymbolTableEntry ste) 
+{
+    std::string out;
+    char buf[300];
+    sprintf(buf, "invokestatic %s/%s(", fileName.c_str(), ste.name);
+    out = buf;
+    for (int i=0; i<ste.attr.paramLst.size(); i++)
+        out += typeCode[ste.attr.paramLst[i].typeID];
+    out = out + ')' + typeCode[ste.type.typeID] + ' ';
+    genCode(1, out.c_str());
+}
+
+void genFuncBegin(SymbolTableEntry ste) 
+{
+    std::string out;
+    char buf[300];
+    sprintf(buf, ".method public static %s(", ste.name);
+    out = buf;
+    for (int i=0; i<ste.attr.paramLst.size(); i++)
+        out += typeCode[ste.attr.paramLst[i].typeID];
+    out = out + ')' + typeCode[ste.type.typeID] + ' ';
+    genCode(0, "");
+    genCode(0, out.c_str());
+    genCode(0, ".limit stack 100 ");
+    genCode(0, ".limit locals 100 ");
+}
+
+void genFuncEnd(Type t) 
+{
+    if (t.typeID != T_NONE)
+        genCode(1, "%creturn ", arithCode[t.typeID]);
+    else
+        genCode(1, "return ");
+    genCode(0, ".end method ");
+}
+
+void genReturn(Type t)
+{
+    if (t.typeID != T_NONE)
+        genCode(1, "%creturn ", arithCode[t.typeID]);
+    else
+        genCode(1, "return ");
 }

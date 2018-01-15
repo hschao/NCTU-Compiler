@@ -114,6 +114,9 @@ function_declaration
         
         if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
             semanticError("a function cannot return an array type");
+        else {
+            genFuncBegin(symTable[symTable.size()-2].entries.back());
+        }
     }    
    compound_statement 
    KW_END IDENT
@@ -121,7 +124,9 @@ function_declaration
         if (strcmp($1, $10) != 0)
             semanticError("the end of the functionName mismatch");
 
-            if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
+        genFuncEnd($5);
+
+        if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
             for(int i=0; i<symTable[0].entries.size(); i++)
                 if (strcmp(symTable[0].entries[i].name, $1) == 0) {
                     symTable[0].entries.erase(symTable[0].entries.begin()+i);
@@ -365,6 +370,7 @@ return_statement
             semanticError("return type mismatch");
         else if (p.type.dimensions.size() != $2.dimensions.size())
             semanticError("return dimension number mismatch");
+        genReturn($2);
     }
    }
  ;
@@ -606,12 +612,12 @@ function_invocation
                     semanticError("parameter type mismatch");
                     break;
                 }
-                if (p.attr.paramLst[i].typeID == T_REAL && $3[i].typeID == T_INTEGER)
-                    genI2F();
             }
 
-            if (allMatch)
+            if (allMatch) {
                 $$ = p.type;
+                genFuncInvoke(p);
+            }
         }
     }
    }
