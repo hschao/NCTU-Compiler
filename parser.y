@@ -276,7 +276,7 @@ simple_statement
         semanticError(buf);
     } 
    }
- | KW_PRINT { genCode(0, "getstatic java/lang/System/out Ljava/io/PrintStream; "); }
+ | KW_PRINT { genCode(1, "getstatic java/lang/System/out Ljava/io/PrintStream; "); }
    boolean_expr SEMICOLON {
     if ($3.dimensions.size() > 0)
         semanticError("operand of print statement is array type");
@@ -377,7 +377,7 @@ boolean_expr
             $$.typeID = T_ERROR;
         else {
             $$.typeID = T_BOOLEAN;
-            genCode(0, "ior ");
+            genCode(1, "ior ");
         }
     }
  | boolean_term { $$ = $1; }
@@ -391,7 +391,7 @@ boolean_term
             $$.typeID = T_ERROR;
         else {
             $$.typeID = T_BOOLEAN;
-            genCode(0, "iand ");
+            genCode(1, "iand ");
         }
     }
  | boolean_factor { $$ = $1; }
@@ -405,8 +405,8 @@ boolean_factor
             $$.typeID = T_ERROR;
         else {
             $$.typeID = T_BOOLEAN;
-            genCode(0, "iconst_1 ");
-            genCode(0, "ixor ");
+            genCode(1, "iconst_1 ");
+            genCode(1, "ixor ");
         }
     }
  | relop_expr { $$ = $1; }
@@ -421,11 +421,7 @@ relop_expr
         else {
             $$.typeID = T_BOOLEAN;
             // Generate relational op bytecodes
-            // 
-            // 
-            // 
-            // 
-            //
+            genRelOp($1, $2, $3);
         }
     }
  | expression { $$ = $1; }
@@ -448,14 +444,14 @@ expression
             $$.typeID = T_ERROR;
         } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
             $$.typeID = T_INTEGER;
-            genCode(0, "i%s ", operatorCode[$2].c_str());
+            genCode(1, "i%s ", operatorCode[$2].c_str());
         } else {
             $$.typeID = T_REAL;
             if ($1.typeID == T_INTEGER)
                 genStoreAndI2F();
             else if ($3.typeID == T_INTEGER)
                 genI2F();
-            genCode(0, "f%s ", operatorCode[$2].c_str());
+            genCode(1, "f%s ", operatorCode[$2].c_str());
         }
     }
  | term { $$ = $1; }
@@ -475,7 +471,7 @@ term
                 $$.typeID = T_ERROR;
             else {
                 $$.typeID = T_INTEGER;
-                genCode(0, "irem ");
+                genCode(1, "irem ");
             }
         } else { // *, /
             if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
@@ -485,14 +481,14 @@ term
                 $$.typeID = T_ERROR;
             } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
                 $$.typeID = T_INTEGER;
-                genCode(0, "i%s ", operatorCode[$2].c_str());
+                genCode(1, "i%s ", operatorCode[$2].c_str());
             } else {
                 $$.typeID = T_REAL;
                 if ($1.typeID == T_INTEGER)
                     genStoreAndI2F();
                 else if ($3.typeID == T_INTEGER)
                     genI2F();
-                genCode(0, "f%s ", operatorCode[$2].c_str());
+                genCode(1, "f%s ", operatorCode[$2].c_str());
             }
         }
     }
@@ -511,10 +507,10 @@ factor
         $$.typeID = T_ERROR;
     } else if ($2.typeID == T_INTEGER) {
         $$.typeID = T_INTEGER;
-        genCode(0, "ineg ");
+        genCode(1, "ineg ");
     } else if ($2.typeID == T_REAL) {
         $$.typeID = T_REAL;
-        genCode(0, "fneg ");
+        genCode(1, "fneg ");
     } else {
         semanticError("operand of operator 'negative' is not number");
         $$.typeID = T_ERROR;
