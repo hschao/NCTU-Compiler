@@ -62,3 +62,15 @@ void genLoadVar(SymbolTableEntry ste) {
         genCode(0, "%cload %d ", arithCode[ste.type.typeID], ste.attr.varNo);
     }
 }
+
+void genLoadConst(Variant val) {
+    if (val.typeID == T_INTEGER) {
+        genCode(0, "ldc %d ", val.integer);
+    } else if (val.typeID == T_REAL) {
+        genCode(0, "ldc %f ", val.real);
+    } else if (val.typeID == T_BOOLEAN) {
+        genCode(0, val.bl? "iconst_1 ": "iconst_0 ");
+    } else if (val.typeID == T_STRING) {
+        genCode(0, "ldc \"%s\" ", val.str);
+    }
+}

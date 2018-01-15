@@ -14,5 +14,6 @@ void genMainBegin();
 void genMainEnd();
 void genStoreVar(SymbolTableEntry ste);
 void genLoadVar(SymbolTableEntry ste);
+void genLoadConst(Variant val);
 
 #endif

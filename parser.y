@@ -279,7 +279,9 @@ simple_statement
     } else if ($2.kind == K_FUNC) {
         sprintf(buf, "'%s' is function", $2.name);
         semanticError(buf);
-    }  else if ($2.kind == K_PARAM || $2.kind == K_VAR || $2.kind == K_LOOP_VAR) {
+    } else if ($2.kind == K_CONST) {
+        genLoadConst($2.attr.constant);
+    } else {
         if ($2.type.dimensions.size() > 0)
             semanticError("operand of print statement is array type");
         else {
@@ -513,11 +515,17 @@ operand
         $$.typeID = T_ERROR;
         sprintf(buf, "'%s' is function", $1.name);
         semanticError(buf);
+    } else if ($1.kind == K_CONST) {
+        genLoadConst($1.attr.constant);
     } else {
         genLoadVar($1);
     }
    }
- | literal_constant { $$.typeID = $1.typeID; }
+ | literal_constant
+    { 
+        $$.typeID = $1.typeID;
+        genLoadConst($1);
+    }
  | function_invocation { $$ = $1; }
  ;
 
