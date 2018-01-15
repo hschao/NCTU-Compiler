@@ -4,6 +4,7 @@ using namespace std;
 extern int linenum;
 extern void semanticError( string msg );
 
+int varNo = 1;
 vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
 const char* typeToStr[] = {"integer", "real", "boolean", "string", "void", ""};
@@ -40,6 +41,10 @@ TypeAccepct Type::acceptable(Type t) {
 
 SymbolTable::SymbolTable(int level) {
   this->level = level;
+}
+
+void SymbolTable::resetVarNumber(int num) {
+  varNo = num;
 }
 
 void SymbolTable::PrintTable() {
@@ -116,6 +121,11 @@ void SymbolTable::addVariables(vector<string> &ids, Type t) {
     strcpy(ste.name, ids[i].c_str());
     ste.kind = K_VAR;
     ste.type = t;
+    if (level != 0) {
+      ste.attr.varNo = varNo++;
+    } else {
+      ste.attr.varNo = -1;
+    }
     addEntry(ste);
   }
 }
@@ -137,8 +147,11 @@ void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
     strcpy(ste.name, paramLst[i].name.c_str());
     ste.kind = K_PARAM;
     ste.type = paramLst[i].t;
-    if (!addEntry(ste))
+    ste.attr.varNo = varNo++;
+    if (!addEntry(ste)) {
       paramLst.erase(paramLst.begin()+i);
+      varNo--;
+    }
   }
 }
 
@@ -149,6 +162,17 @@ void SymbolTable::addProgram(std::string name) {
   ste.kind = K_PROG;
   ste.type.typeID = T_NONE;
   addEntry(ste);
+}
+
+void SymbolTable::addLoopVar(std::string name) {
+
+  SymbolTableEntry ste;
+  strcpy(ste.name, name.c_str());
+  ste.kind = K_LOOP_VAR;
+  ste.type.typeID = T_INTEGER;
+  ste.type.dimensions.clear();
+  ste.attr.varNo = varNo++;
+  entries.push_back(ste);
 }
 
 bool SymbolTable::addEntry(SymbolTableEntry &ste) {

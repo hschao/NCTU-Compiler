@@ -1,3 +1,7 @@
+// symbol.h
+#ifndef SYMBOL_H
+#define SYMBOL_H
+
 #include <vector>
 #include <cstring>
 #include <iostream>
@@ -40,6 +44,7 @@ typedef struct {
 typedef struct {
   Variant constant;
   std::vector<Type> paramLst;
+  int varNo;
 } Attr;
 
 class SymbolTableEntry {
@@ -57,12 +62,14 @@ class SymbolTable {
 public:
   SymbolTable() {};
   SymbolTable(int level);
+  static void resetVarNumber(int num);
   void PrintTable();
   void addConstants(std::vector<std::string> &ids, Variant value);
   void addVariables(std::vector<std::string> &ids, Type t);
   void addFunction(std::string id, std::vector<Arg> &paramLst, Type retType);
   void addParameters(std::vector<Arg> &paramLst);
   void addProgram(std::string name);
+  void addLoopVar(std::string name);
   bool addEntry(SymbolTableEntry &ste);
 
   std::vector<SymbolTableEntry> entries;
@@ -78,4 +85,6 @@ SymbolTableEntry findSymbol(std::string name);
 SymbolTableEntry findFunction(std::string name);
 
 extern std::vector<SymbolTable> symTable;
+extern int varNo;
 
+#endif

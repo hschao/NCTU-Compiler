@@ -1,5 +1,6 @@
 %{
 #include "main.h"
+#include "genCode.h"
 using namespace std;
 
 extern int linenum;             /* declared in lex.l */
@@ -16,17 +17,6 @@ int yylex();
 int yyerror( const char *msg );
 void semanticError( string msg );
 
-void genCode(int add_indent, const char *fmt, ...) { 
-    static int indent = 0;
-    indent += add_indent;
-    va_list args;
-    va_start (args, fmt);
-    for (int i = 0; i < indent; ++i)
-        printf("\t");
-    vprintf (fmt, args);
-    printf ("\n");
-    va_end (args);
-}
 %}
 
 %token COMMA SEMICOLON COLON L_PAREN R_PAREN L_BRACKET R_BRACKET
@@ -67,10 +57,7 @@ program
     symTable.back().addProgram($1);
 
     // Generate initialization java bytecode
-    genCode(0, "; %s.j ", $1);
-    genCode(0, ".class public %s ", $1);
-    genCode(0, ".super java/lang/Object ");
-    genCode(0, ".field public static _sc Ljava/util/Scanner; ");
+    genProgBegin();
 
    } programbody KW_END IDENT { 
     pop_SymbolTable(Opt_D);
@@ -83,24 +70,18 @@ program
  ;
 
 programbody
- : var_constant_declarations function_declarations { 
-    isParsingProgram=true; 
+ : var_constant_declarations function_declarations 
+    { 
+        isParsingProgram=true; 
+        symTable.back().resetVarNumber(1);
 
-    // Generate initialization java bytecode
-    genCode(0, "");
-    genCode(0, ".method public static main([Ljava/lang/String;)V ");
-    genCode(1, ".limit stack 100 ");
-    genCode(0, ".limit locals 100 ");
-    genCode(0, "new java/util/Scanner "); 
-    genCode(0, "dup ");
-    genCode(0, "getstatic java/lang/System/in Ljava/io/InputStream; ");
-    genCode(0, "invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V ");
-    genCode(0, "putstatic %s/_sc Ljava/util/Scanner; ", $<stringValue>-2);
-
-   } compound_statement {
-    genCode(0, "return ");
-    genCode(-1, ".end method ");
-   }
+        // Generate initialization java bytecode
+        genMainBegin();
+    } 
+   compound_statement 
+    {
+        genMainEnd();
+    }
  ;
 
 var_constant_declarations
@@ -120,6 +101,9 @@ function_declarations
 function_declaration
  : IDENT L_PAREN arguments R_PAREN function_return_type SEMICOLON 
     { 
+        // Initialize available number counter.
+        symTable.back().resetVarNumber(0);
+
         // Create new symbol table.
         push_SymbolTable(true); 
         ignoreNextCompound=true; 
@@ -129,18 +113,19 @@ function_declaration
         if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
             semanticError("a function cannot return an array type");
     }    
-    compound_statement 
-   KW_END IDENT {
-    if (strcmp($1, $10) != 0)
-        semanticError("the end of the functionName mismatch");
+   compound_statement 
+   KW_END IDENT
+    {
+        if (strcmp($1, $10) != 0)
+            semanticError("the end of the functionName mismatch");
 
-        if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
-        for(int i=0; i<symTable[0].entries.size(); i++)
-            if (strcmp(symTable[0].entries[i].name, $1) == 0) {
-                symTable[0].entries.erase(symTable[0].entries.begin()+i);
-                break;
-            }
-   }
+            if ($5.typeID == T_ERROR || ($5.typeID != T_NONE && $5.dimensions.size() != 0))
+            for(int i=0; i<symTable[0].entries.size(); i++)
+                if (strcmp(symTable[0].entries[i].name, $1) == 0) {
+                    symTable[0].entries.erase(symTable[0].entries.begin()+i);
+                    break;
+                }
+    }
  ; 
 
 function_return_type
@@ -197,7 +182,6 @@ variable_declaration
             if (symTable.back().level == 0) {
                 // Generate global variables java bytecode
                 for (int i=0; i<$2.size(); i++) {
-                    char typeCode[3] = {'I', 'F', 'Z'};
                     genCode(0, ".field public static %s %c ", $2[i].c_str(), typeCode[$4.typeID]);
                 }
             } else {
@@ -276,6 +260,9 @@ simple_statement
                 } else if ( $1.type.dimensions.size() > 0 ) 
                     semanticError("array assignment is not allowed");
             }
+
+            // Generate bytecode for store
+            genStoreVar($1);
         }    
     } else if ($1.kind == K_CONST) {
         sprintf(buf, "constant '%s' cannot be assigned", $1.name);
@@ -292,9 +279,13 @@ simple_statement
     } else if ($2.kind == K_FUNC) {
         sprintf(buf, "'%s' is function", $2.name);
         semanticError(buf);
-    }  else if ($2.kind == K_PARAM || $2.kind == K_VAR) {
+    }  else if ($2.kind == K_PARAM || $2.kind == K_VAR || $2.kind == K_LOOP_VAR) {
         if ($2.type.dimensions.size() > 0)
             semanticError("operand of print statement is array type");
+        else {
+            // Generate bytecode for load
+            genLoadVar($2);
+        }
     } 
    }
  | KW_PRINT expression SEMICOLON
@@ -338,14 +329,8 @@ for_statement
         push_SymbolTable(false); 
 
         // Check loop variable redeclare.
-        if(checkLoopVarRedeclare($2)) {
-            SymbolTableEntry ste;
-            strcpy(ste.name, $2);
-            ste.kind = K_LOOP_VAR;
-            ste.type.typeID = T_INTEGER;
-            ste.type.dimensions.clear();
-            symTable.back().entries.push_back(ste);
-        }
+        if(checkLoopVarRedeclare($2))
+            symTable.back().addLoopVar($2);
 
         if ($4 > $6)
             semanticError("loop parameter's lower bound > uppper bound");
@@ -528,7 +513,9 @@ operand
         $$.typeID = T_ERROR;
         sprintf(buf, "'%s' is function", $1.name);
         semanticError(buf);
-    } 
+    } else {
+        genLoadVar($1);
+    }
    }
  | literal_constant { $$.typeID = $1.typeID; }
  | function_invocation { $$ = $1; }
