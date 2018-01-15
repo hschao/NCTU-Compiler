@@ -9,6 +9,8 @@
 extern char typeCode[3];
 extern char arithCode[3];
 extern std::map<std::string, std::string> operatorCode;
+extern std::vector<int> labelStack;
+extern int nextLabelNo;
 
 void genCode(int add_indent, const char *fmt, ...);
 void genProgBegin();

@@ -108,9 +108,9 @@ void genRelOp(Type a, std::string op, Type b)
 {
     labelStack.push_back(nextLabelNo++);
     if(a.typeID == T_INTEGER)
-        genCode(1, "isub");
+        genCode(1, "isub ");
     else if(a.typeID == T_REAL)
-        genCode(1, "fcmpl");
+        genCode(1, "fcmpl ");
     if (op == "<")
         genCode(1, "iflt Ltrue_%d ", labelStack.back());
     else if (op == "<=")

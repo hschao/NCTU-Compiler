@@ -298,15 +298,35 @@ simple_statement
  ;
 
 conditional_statement 
- : KW_IF condition KW_THEN statements KW_ELSE statements KW_END KW_IF
- | KW_IF condition KW_THEN statements KW_END KW_IF 
+ : KW_IF condition KW_THEN statements 
+    {
+        genCode(1, "goto Lexit_%d ", labelStack.back());
+        genCode(0, "Lelse_%d: ", labelStack.back());        
+    }
+   KW_ELSE statements 
+    {
+        genCode(0, "Lexit_%d: ", labelStack.back());
+        labelStack.pop_back();
+    }
+   KW_END KW_IF
+ | KW_IF condition KW_THEN statements 
+    {
+        genCode(0, "Lelse_%d: ", labelStack.back());   
+    }
+   KW_END KW_IF 
+    {
+        labelStack.pop_back();
+    }
  ;
 
 condition
- : boolean_expr {
-    if ($1.typeID != T_BOOLEAN)
-        semanticError("operand of if statement is not boolean type");
-   } 
+ : boolean_expr 
+    {
+        if ($1.typeID != T_BOOLEAN)
+            semanticError("operand of if statement is not boolean type");
+        labelStack.push_back(nextLabelNo++);
+        genCode(1, "ifeq Lelse_%d ", labelStack.back());
+    } 
  ;
 
 while_statement 
