@@ -104,6 +104,22 @@ void genPrint(TypeID t) {
     }
 }
 
+void genRead(SymbolTableEntry ste) {
+    genCode(1, "getstatic %s/_sc Ljava/util/Scanner; ", fileName.c_str());
+    switch(ste.type.typeID){
+        case T_INTEGER:
+            genCode(1, "invokevirtual java/util/Scanner/nextInt()I ");
+            break;
+        case T_REAL:
+            genCode(1, "invokevirtual java/util/Scanner/nextFloat()F ");
+            break;
+        case T_BOOLEAN:
+            genCode(1, "invokevirtual java/util/Scanner/nextBoolean()Z ");
+            break;
+    }
+    genStoreVar(ste);
+}
+
 void genRelOp(Type a, std::string op, Type b)
 {
     labelStack.push_back(nextLabelNo++);

@@ -293,7 +293,8 @@ simple_statement
     }  else if ($2.kind == K_PARAM || $2.kind == K_VAR) {
         if ($2.type.dimensions.size() > 0)
             semanticError("operand of read statement is array type");
-    } 
+        genRead($2);
+    }
    }
  ;
 

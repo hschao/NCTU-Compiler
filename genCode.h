@@ -22,6 +22,7 @@ void genLoadConst(Variant val);
 void genI2F();
 void genStoreAndI2F();
 void genPrint(TypeID t);
+void genRead(SymbolTableEntry ste);
 void genRelOp(Type a, std::string op, Type b);
 
 #endif
