@@ -1,6 +1,7 @@
 %{
 #include "main.h"
 #include "genCode.h"
+#include "semCheck.h"
 using namespace std;
 
 extern int linenum;             /* declared in lex.l */
@@ -32,12 +33,13 @@ void semanticError( string msg );
 %type <intValue> integer_constant reference_list
 %type <ids> identifier_list
 %type <typeID> scalar_type
-%type <type> type function_return_type expression operand integer_expr boolean_expr condition
+%type <type> type function_return_type condition
 %type <type> function_invocation
+%type <type> expression boolean_expr boolean_term boolean_factor relop_expr term factor
 %type <args> arguments argument_list argument 
 %type <entry> variable_reference
 %type <params> expressions expression_list
-%type <stringValue> operator_arithmetic operator_compare operator_logical
+%type <stringValue> rel_op add_op mul_op
 
 %left OR
 %left AND
@@ -370,111 +372,146 @@ expressions
  ;
 
 expression_list
- : expression_list COMMA expression { $$=$1; $$.push_back( $3 ); }
- | expression { 
+ : expression_list COMMA boolean_expr { $$=$1; $$.push_back( $3 ); }
+ | boolean_expr { 
     $$.clear();
     $$.push_back($1); 
    }
  ;
 
-expression
- : operand { $$ = $1; }
- | expression operator_arithmetic expression {
-    char buf[300];
-    if ($1.typeID == T_ERROR) {
-        semanticError("error in left operand of '+' operator");
-        $$.typeID = T_ERROR;
-    } else if ($3.typeID == T_ERROR) {
-        semanticError("error in right operand of '+' operator");
-        $$.typeID = T_ERROR;
-    } else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
-        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else if ($1.typeID == T_STRING && $3.typeID == T_STRING && strcmp($2, "+") == 0) {
-        $$.typeID = T_STRING;
-    } else if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
-               ($3.typeID != T_INTEGER && $3.typeID != T_REAL)) {
-        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
-        printf("1\n");
-        $$.typeID = T_INTEGER;
-        genCode(0, "i%s ", operatorCode[$2].c_str());
-    } else {
-        printf("2\n");
-        $$.typeID = T_REAL;
-        if ($1.typeID == T_INTEGER)
-            genStoreAndI2F();
-        else if ($3.typeID == T_INTEGER)
-            genI2F();
-        genCode(0, "f%s ", operatorCode[$2].c_str());
+boolean_expr
+ : boolean_expr OR boolean_term
+    {
+        $$.dimensions.clear();
+        if (!verifyAndOrOp($1, $2, $3))
+            $$.typeID = T_ERROR;
+        else {
+            $$.typeID = T_BOOLEAN;
+            genCode(0, "ior ");
+        }
     }
-   }
- | expression operator_compare expression {
-    char buf[300];
-    if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
-        $$.typeID = T_ERROR;
-    else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
-        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else if (($1.typeID == T_INTEGER || $1.typeID == T_REAL) && ($1.typeID == $3.typeID)) {
-        $$.typeID = T_BOOLEAN;
-    } else {
-        sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    }
-   }
- | expression MOD expression {
-    if ($1.typeID != T_INTEGER || $3.typeID != T_INTEGER) {
-        semanticError("one of the operands of operator 'mod' is not integer");
-        $$.typeID = T_ERROR;
-    } else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
-        sprintf(buf, "one of the operands of operator 'mod' is array type");
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else {
-        $$.typeID = T_INTEGER;
-        genCode(0, "irem ");
-    }
-   }
- | expression operator_logical expression {
-    char buf[300];
-    if ($1.typeID == T_ERROR || $3.typeID == T_ERROR)
-        $$.typeID = T_ERROR;
-    else if ($1.dimensions.size()>0 || $3.dimensions.size()>0){
-        sprintf(buf, "one of the operands of operator '%s' is array type", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
-        $$.typeID = T_BOOLEAN;
-        genCode(0, "i%s ", $2);
-    } else {
-        sprintf(buf, "one of the operands of operator '%s' is not boolean", $2);
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    }
-   }
- | NOT expression {
+ | boolean_term { $$ = $1; }
+ ;
 
-    if ($2.typeID == T_ERROR)
-        $$.typeID = T_ERROR;
-    else if ($2.dimensions.size()>0){
-        sprintf(buf, "operand of operator 'not' is array type");
-        semanticError(buf);
-        $$.typeID = T_ERROR;
-    } else if ($2.typeID == T_BOOLEAN) {
-        $$.typeID = T_BOOLEAN;
-        genCode(0, "ixor ");
-    } else {
-        semanticError("operand of operator 'not' is not boolean");
-        $$.typeID = T_ERROR;
+boolean_term        
+ : boolean_term AND boolean_factor
+    {
+        $$.dimensions.clear();
+        if (!verifyAndOrOp($1, $2, $3))
+            $$.typeID = T_ERROR;
+        else {
+            $$.typeID = T_BOOLEAN;
+            genCode(0, "iand ");
+        }
     }
-   }
- | SUB expression {
+ | boolean_factor { $$ = $1; }
+ ;
+
+boolean_factor      
+ : NOT boolean_factor
+    {
+        $$.dimensions.clear();
+        if (!verifyNotOp($2))
+            $$.typeID = T_ERROR;
+        else {
+            $$.typeID = T_BOOLEAN;
+            genCode(0, "iconst_1 ");
+            genCode(0, "ixor ");
+        }
+    }
+ | relop_expr { $$ = $1; }
+ ;
+
+relop_expr      
+ : expression rel_op expression
+    {
+        char buf[300];
+        if (!verifyRelOp($1, $2, $3))
+            $$.typeID = T_ERROR;
+        else {
+            $$.typeID = T_BOOLEAN;
+            // Generate relational op bytecodes
+            // 
+            // 
+            // 
+            // 
+            //
+        }
+    }
+ | expression { $$ = $1; }
+ ;
+
+expression           
+ : expression add_op term
+    {
+        char buf[300];
+        $$.dimensions.clear();
+
+        if (!verifyArithOp($1, $2, $3))
+            $$.typeID = T_ERROR;
+        else if ($1.typeID == T_STRING && $3.typeID == T_STRING && strcmp($2, "+") == 0) {
+            $$.typeID = T_STRING;
+        } else if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
+                   ($3.typeID != T_INTEGER && $3.typeID != T_REAL)) {
+            sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
+            semanticError(buf);
+            $$.typeID = T_ERROR;
+        } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
+            $$.typeID = T_INTEGER;
+            genCode(0, "i%s ", operatorCode[$2].c_str());
+        } else {
+            $$.typeID = T_REAL;
+            if ($1.typeID == T_INTEGER)
+                genStoreAndI2F();
+            else if ($3.typeID == T_INTEGER)
+                genI2F();
+            genCode(0, "f%s ", operatorCode[$2].c_str());
+        }
+    }
+ | term { $$ = $1; }
+ ;
+
+term            
+ : term mul_op factor 
+    {
+        char buf[300];
+        $$.dimensions.clear();
+        
+        if (!verifyArithOp($1, $2, $3))
+            $$.typeID = T_ERROR;
+        else if( strcmp($2, "mod") == 0 ) {
+
+            if (!verifyModOp($1, $3))
+                $$.typeID = T_ERROR;
+            else {
+                $$.typeID = T_INTEGER;
+                genCode(0, "irem ");
+            }
+        } else { // *, /
+            if (($1.typeID != T_INTEGER && $1.typeID != T_REAL) ||
+                ($3.typeID != T_INTEGER && $3.typeID != T_REAL)) {
+                sprintf(buf, "operands of operator '%s' are not both integer or both real", $2);
+                semanticError(buf);
+                $$.typeID = T_ERROR;
+            } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
+                $$.typeID = T_INTEGER;
+                genCode(0, "i%s ", operatorCode[$2].c_str());
+            } else {
+                $$.typeID = T_REAL;
+                if ($1.typeID == T_INTEGER)
+                    genStoreAndI2F();
+                else if ($3.typeID == T_INTEGER)
+                    genI2F();
+                genCode(0, "f%s ", operatorCode[$2].c_str());
+            }
+        }
+    }
+ | factor { $$ = $1; }
+ ;
+
+
+factor          
+ : SUB factor {
 
     if ($2.typeID == T_ERROR)
         $$.typeID = T_ERROR;
@@ -493,61 +530,36 @@ expression
         $$.typeID = T_ERROR;
     }
    }
- | L_PAREN expression R_PAREN {
-    $$ = $2;
-   }
- ;
-
-boolean_expr
- : expression {
-    if ($1.typeID == T_BOOLEAN && $1.dimensions.size() == 0)
-        $$ = $1;
-    else
-        $$.typeID = T_ERROR;
-   }
- ;
-
-integer_expr
- : expression {
-    if ($1.typeID == T_INTEGER && $1.dimensions.size() == 0)
-        $$ = $1;
-    else
-        $$.typeID = T_ERROR;
-   }
- ;
-
-operand 
- : variable_reference { 
-
-    $$ = $1.type;
-    if ($1.kind == K_PROG) {
-        $$.typeID = T_ERROR;
-        sprintf(buf, "'%s' is program", $1.name);
-        semanticError(buf);
-    } else if ($1.kind == K_FUNC) {
-        $$.typeID = T_ERROR;
-        sprintf(buf, "'%s' is function", $1.name);
-        semanticError(buf);
-    } else if ($1.kind == K_CONST) {
-        genLoadConst($1.attr.constant);
-    } else {
-        genLoadVar($1);
+ | variable_reference 
+    { 
+        $$ = $1.type;
+        if ($1.kind == K_PROG) {
+            $$.typeID = T_ERROR;
+            sprintf(buf, "'%s' is program", $1.name);
+            semanticError(buf);
+        } else if ($1.kind == K_FUNC) {
+            $$.typeID = T_ERROR;
+            sprintf(buf, "'%s' is function", $1.name);
+            semanticError(buf);
+        } else if ($1.kind == K_CONST) {
+            genLoadConst($1.attr.constant);
+        } else {
+            genLoadVar($1);
+        }
     }
-   }
+ | L_PAREN boolean_expr R_PAREN
+    {
+        $$ = $2;
+    }
+ | function_invocation { $$ = $1; }
  | literal_constant
     { 
         $$.typeID = $1.typeID;
         genLoadConst($1);
     }
- | function_invocation { $$ = $1; }
  ;
 
-operator_logical
- : OR  { $$ = $1; }
- | AND  { $$ = $1; }
- ;
-
-operator_compare
+rel_op
  : GREAT  { $$ = $1; }
  | GREAT_EQU  { $$ = $1; }
  | EQU  { $$ = $1; }
@@ -556,10 +568,14 @@ operator_compare
  | NOT_EQU { $$ = $1; }
  ;
 
-operator_arithmetic
+add_op
  : ADD { $$ = $1; }
  | SUB  { $$ = $1; }
- | MUL  { $$ = $1; }
+ ;
+
+mul_op
+ : MOD { $$ = $1; }
+ | MUL { $$ = $1; }
  | DIV { $$ = $1; }
  ;
 
@@ -619,7 +635,7 @@ variable_reference
  ;
 
 reference_list
- : reference_list L_BRACKET integer_expr R_BRACKET { 
+ : reference_list L_BRACKET boolean_expr R_BRACKET { 
     if ($1 != -1 && $3.typeID == T_INTEGER)
         $$ = $1 + 1;
     else
@@ -678,12 +694,6 @@ int yyerror( const char *msg )
     exit(-1);
 }
 
-bool noError = true;
-void semanticError( string msg )
-{
-    printf("<Error> found in Line %d: %s\n", linenum, msg.c_str() );
-    noError = false;
-}
 
 string getFileName(string s) {
 

@@ -1,4 +1,5 @@
 #include "symbol.h"
+#include "semCheck.h"
 using namespace std;
 
 extern int linenum;
