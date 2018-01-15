@@ -9,7 +9,7 @@ typedef enum {
 } Kind;
 
 typedef enum {
-  T_INTEGER, T_REAL, T_BOOLEAN, T_STRING, T_NONE, T_ERROR
+  T_INTEGER=0, T_REAL, T_BOOLEAN, T_STRING, T_NONE, T_ERROR
 } TypeID;
 
 typedef enum {

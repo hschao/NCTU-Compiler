@@ -16,12 +16,16 @@ int yylex();
 int yyerror( const char *msg );
 void semanticError( string msg );
 
-void _out(const char *fmt, ...) { 
-  va_list args;
-  va_start (args, fmt);
-  vprintf (fmt, args);
-  printf ("\n");
-  va_end (args);
+void genCode(int add_indent, const char *fmt, ...) { 
+    static int indent = 0;
+    indent += add_indent;
+    va_list args;
+    va_start (args, fmt);
+    for (int i = 0; i < indent; ++i)
+        printf("\t");
+    vprintf (fmt, args);
+    printf ("\n");
+    va_end (args);
 }
 %}
 
@@ -62,11 +66,11 @@ program
     push_SymbolTable(true);
     symTable.back().addProgram($1);
 
-    // Generate java bytecode
-    _out("; %s.j ", $1);
-    _out(".class public %s ", $1);
-    _out(".super java/lang/Object ");
-    _out(".field public static _sc Ljava/util/Scanner; ");
+    // Generate initialization java bytecode
+    genCode(0, "; %s.j ", $1);
+    genCode(0, ".class public %s ", $1);
+    genCode(0, ".super java/lang/Object ");
+    genCode(0, ".field public static _sc Ljava/util/Scanner; ");
 
    } programbody KW_END IDENT { 
     pop_SymbolTable(Opt_D);
@@ -82,20 +86,20 @@ programbody
  : var_constant_declarations function_declarations { 
     isParsingProgram=true; 
 
-    // Generate java bytecode
-    _out("");
-    _out(".method public static main([Ljava/lang/String;)V ");
-    _out("\t.limit stack 100 ");
-    _out("\t.limit locals 100 ");
-    _out("\tnew java/util/Scanner "); 
-    _out("\tdup ");
-    _out("\tgetstatic java/lang/System/in Ljava/io/InputStream; ");
-    _out("\tinvokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V ");
-    _out("\tputstatic %s/_sc Ljava/util/Scanner; ", $<stringValue>-2);
+    // Generate initialization java bytecode
+    genCode(0, "");
+    genCode(0, ".method public static main([Ljava/lang/String;)V ");
+    genCode(1, ".limit stack 100 ");
+    genCode(0, ".limit locals 100 ");
+    genCode(0, "new java/util/Scanner "); 
+    genCode(0, "dup ");
+    genCode(0, "getstatic java/lang/System/in Ljava/io/InputStream; ");
+    genCode(0, "invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V ");
+    genCode(0, "putstatic %s/_sc Ljava/util/Scanner; ", $<stringValue>-2);
 
    } compound_statement {
-    _out("\treturn ");
-    _out(".end method ");
+    genCode(0, "return ");
+    genCode(-1, ".end method ");
    }
  ;
 
@@ -184,8 +188,23 @@ variable_declaration
             msg += ", " + $2[i];
         semanticError(msg);
     }
-    else
+    else {
         symTable.back().addVariables($2, $4);
+        // printf("%d\n", symTable.back().level);
+
+        if ($4.dimensions.size() == 0 && $4.typeID != T_STRING && $4.typeID != T_NONE) {
+            // Array and String type code generation are not implemented.
+            if (symTable.back().level == 0) {
+                // Generate global variables java bytecode
+                for (int i=0; i<$2.size(); i++) {
+                    char typeCode[3] = {'I', 'F', 'Z'};
+                    genCode(0, ".field public static %s %c ", $2[i].c_str(), typeCode[$4.typeID]);
+                }
+            } else {
+
+            }  
+        }
+    }
    }
  ;
 
