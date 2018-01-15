@@ -28,4 +28,6 @@ void genFuncInvoke(SymbolTableEntry ste);
 void genFuncBegin(SymbolTableEntry ste);
 void genFuncEnd(Type t);
 void genReturn(Type t);
+void genForLoop(SymbolTableEntry ste, int start, int end);
+void genForLoopEnd(SymbolTableEntry ste);
 #endif

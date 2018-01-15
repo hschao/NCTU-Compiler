@@ -190,3 +190,35 @@ void genReturn(Type t)
     else
         genCode(1, "return ");
 }
+
+void genForLoop(SymbolTableEntry ste, int start, int end)
+{
+    labelStack.push_back(nextLabelNo++);
+    genCode(1, "ldc %d ", start);
+    genCode(1, "istore %d ", ste.attr.varNo);
+    genCode(0, "Lbegin_%d: ", labelStack.back());
+    genCode(1, "iload %d ", ste.attr.varNo);
+    labelStack.push_back(nextLabelNo++);
+    genCode(1, "ldc %d ", end);
+    genCode(1, "isub ");
+    genCode(1, "ifle Ltrue_%d ", labelStack.back());
+    genCode(1, "iconst_0 ");
+    genCode(1, "goto Lfalse_%d ", labelStack.back());
+    genCode(0, "Ltrue_%d: ", labelStack.back());
+    genCode(1, "iconst_1 ");
+    genCode(0, "Lfalse_%d: ", labelStack.back());
+    labelStack.pop_back();
+    genCode(1, "ifeq Lexit_%d ", labelStack.back());
+}
+
+void genForLoopEnd(SymbolTableEntry ste)
+{
+    genCode(1, "iload %d ", ste.attr.varNo);
+    genCode(1, "sipush 1 ");
+    genCode(1, "iadd ");
+    genCode(1, "istore %d ", ste.attr.varNo);
+    genCode(1, "goto Lbegin_%d ", labelStack.back());
+    genCode(0, "Lexit_%d: ", labelStack.back());
+    labelStack.pop_back();
+}
+

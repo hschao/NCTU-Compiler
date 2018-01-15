@@ -354,9 +354,13 @@ for_statement
 
         if ($4 > $6)
             semanticError("loop parameter's lower bound > uppper bound");
+        genForLoop(symTable.back().entries.back(), $4, $6);
     }
     statements 
-    { pop_SymbolTable(false); }
+    { 
+        genForLoopEnd(symTable.back().entries.back());
+        pop_SymbolTable(false); 
+    }
    KW_END KW_DO
  ;
 
