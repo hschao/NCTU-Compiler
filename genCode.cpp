@@ -85,3 +85,20 @@ void genStoreAndI2F() {
     genI2F();
     genCode(0, "fload %d ", nextVarNo);
 }
+
+void genPrint(TypeID t) {
+    switch(t){
+        case T_STRING:
+            genCode(0, "invokevirtual java/io/PrintStream/print(Ljava/lang/String;)V ");
+            break;
+        case T_INTEGER:
+            genCode(0, "invokevirtual java/io/PrintStream/print(I)V ");
+            break;
+        case T_REAL:
+            genCode(0, "invokevirtual java/io/PrintStream/print(F)V ");
+            break;
+        case T_BOOLEAN:
+            genCode(0, "invokevirtual java/io/PrintStream/print(Z)V ");
+            break;
+    }
+}

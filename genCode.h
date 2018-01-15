@@ -19,5 +19,6 @@ void genLoadVar(SymbolTableEntry ste);
 void genLoadConst(Variant val);
 void genI2F();
 void genStoreAndI2F();
+void genPrint(TypeID t);
 
 #endif

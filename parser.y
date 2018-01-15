@@ -264,6 +264,8 @@ simple_statement
             }
 
             // Generate bytecode for store
+            if ($1.type.typeID == T_REAL && $3.typeID == T_INTEGER)
+                genI2F(); 
             genStoreVar($1);
         }    
     } else if ($1.kind == K_CONST) {
@@ -274,25 +276,13 @@ simple_statement
         semanticError(buf);
     } 
    }
- | KW_PRINT variable_reference SEMICOLON {
-    if ($2.kind == K_PROG) {
-        sprintf(buf, "'%s' is program", $2.name);
-        semanticError(buf);
-    } else if ($2.kind == K_FUNC) {
-        sprintf(buf, "'%s' is function", $2.name);
-        semanticError(buf);
-    } else if ($2.kind == K_CONST) {
-        genLoadConst($2.attr.constant);
-    } else {
-        if ($2.type.dimensions.size() > 0)
-            semanticError("operand of print statement is array type");
-        else {
-            // Generate bytecode for load
-            genLoadVar($2);
-        }
-    } 
+ | KW_PRINT { genCode(0, "getstatic java/lang/System/out Ljava/io/PrintStream; "); }
+   boolean_expr SEMICOLON {
+    if ($3.dimensions.size() > 0)
+        semanticError("operand of print statement is array type");
+    else
+        genPrint($3.typeID);
    }
- | KW_PRINT expression SEMICOLON
  | KW_READ variable_reference SEMICOLON {
     if ($2.kind == K_PROG) {
         sprintf(buf, "'%s' is program", $2.name);
@@ -593,12 +583,15 @@ function_invocation
             semanticError(buf);
         } else {
             bool allMatch = true;
-            for (int i=0; i<$3.size(); i++)
+            for (int i=0; i<$3.size(); i++) {
                 if (p.attr.paramLst[i].acceptable($3[i]) != E_OK) {
                     allMatch = false;
                     semanticError("parameter type mismatch");
                     break;
                 }
+                if (p.attr.paramLst[i].typeID == T_REAL && $3[i].typeID == T_INTEGER)
+                    genI2F();
+            }
 
             if (allMatch)
                 $$ = p.type;
