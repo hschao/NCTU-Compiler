@@ -8,6 +8,7 @@ extern std::string fileName;
 
 char typeCode[3] = {'I', 'F', 'Z'};
 char arithCode[3] = {'i', 'f', 'i'};
+std::map<std::string, std::string> operatorCode;
 
 void genCode(int add_indent, const char *fmt, ...) { 
     static int indent = 0;
@@ -73,4 +74,14 @@ void genLoadConst(Variant val) {
     } else if (val.typeID == T_STRING) {
         genCode(0, "ldc \"%s\" ", val.str);
     }
+}
+
+void genI2F() {
+    genCode(0, "i2f ");
+}
+
+void genStoreAndI2F() {
+    genCode(0, "fstore %d ", nextVarNo);
+    genI2F();
+    genCode(0, "fload %d ", nextVarNo);
 }

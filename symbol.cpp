@@ -4,7 +4,7 @@ using namespace std;
 extern int linenum;
 extern void semanticError( string msg );
 
-int varNo = 1;
+int nextVarNo = 1;
 vector<SymbolTable> symTable;
 const char* kindToStr[] = {"program", "function", "parameter", "variable", "constant"};
 const char* typeToStr[] = {"integer", "real", "boolean", "string", "void", ""};
@@ -44,7 +44,7 @@ SymbolTable::SymbolTable(int level) {
 }
 
 void SymbolTable::resetVarNumber(int num) {
-  varNo = num;
+  nextVarNo = num;
 }
 
 void SymbolTable::PrintTable() {
@@ -122,7 +122,7 @@ void SymbolTable::addVariables(vector<string> &ids, Type t) {
     ste.kind = K_VAR;
     ste.type = t;
     if (level != 0) {
-      ste.attr.varNo = varNo++;
+      ste.attr.varNo = nextVarNo++;
     } else {
       ste.attr.varNo = -1;
     }
@@ -147,10 +147,10 @@ void SymbolTable::addParameters(std::vector<Arg> &paramLst) {
     strcpy(ste.name, paramLst[i].name.c_str());
     ste.kind = K_PARAM;
     ste.type = paramLst[i].t;
-    ste.attr.varNo = varNo++;
+    ste.attr.varNo = nextVarNo++;
     if (!addEntry(ste)) {
       paramLst.erase(paramLst.begin()+i);
-      varNo--;
+      nextVarNo--;
     }
   }
 }
@@ -171,7 +171,7 @@ void SymbolTable::addLoopVar(std::string name) {
   ste.kind = K_LOOP_VAR;
   ste.type.typeID = T_INTEGER;
   ste.type.dimensions.clear();
-  ste.attr.varNo = varNo++;
+  ste.attr.varNo = nextVarNo++;
   entries.push_back(ste);
 }
 

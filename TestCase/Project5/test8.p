@@ -26,4 +26,4 @@ begin
         print "c < 100 \n";
     end if
 end
-end test1
+end test8

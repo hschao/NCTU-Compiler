@@ -85,6 +85,6 @@ SymbolTableEntry findSymbol(std::string name);
 SymbolTableEntry findFunction(std::string name);
 
 extern std::vector<SymbolTable> symTable;
-extern int varNo;
+extern int nextVarNo;
 
 #endif

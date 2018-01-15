@@ -399,9 +399,17 @@ expression
         semanticError(buf);
         $$.typeID = T_ERROR;
     } else if ($1.typeID == T_INTEGER && $3.typeID == T_INTEGER) {
+        printf("1\n");
         $$.typeID = T_INTEGER;
+        genCode(0, "i%s ", operatorCode[$2].c_str());
     } else {
+        printf("2\n");
         $$.typeID = T_REAL;
+        if ($1.typeID == T_INTEGER)
+            genStoreAndI2F();
+        else if ($3.typeID == T_INTEGER)
+            genI2F();
+        genCode(0, "f%s ", operatorCode[$2].c_str());
     }
    }
  | expression operator_compare expression {
@@ -430,6 +438,7 @@ expression
         $$.typeID = T_ERROR;
     } else {
         $$.typeID = T_INTEGER;
+        genCode(0, "irem ");
     }
    }
  | expression operator_logical expression {
@@ -442,6 +451,7 @@ expression
         $$.typeID = T_ERROR;
     } else if ($1.typeID == T_BOOLEAN && $3.typeID == T_BOOLEAN) {
         $$.typeID = T_BOOLEAN;
+        genCode(0, "i%s ", $2);
     } else {
         sprintf(buf, "one of the operands of operator '%s' is not boolean", $2);
         semanticError(buf);
@@ -458,6 +468,7 @@ expression
         $$.typeID = T_ERROR;
     } else if ($2.typeID == T_BOOLEAN) {
         $$.typeID = T_BOOLEAN;
+        genCode(0, "ixor ");
     } else {
         semanticError("operand of operator 'not' is not boolean");
         $$.typeID = T_ERROR;
@@ -473,8 +484,10 @@ expression
         $$.typeID = T_ERROR;
     } else if ($2.typeID == T_INTEGER) {
         $$.typeID = T_INTEGER;
+        genCode(0, "ineg ");
     } else if ($2.typeID == T_REAL) {
         $$.typeID = T_REAL;
+        genCode(0, "fneg ");
     } else {
         semanticError("operand of operator 'negative' is not number");
         $$.typeID = T_ERROR;
@@ -703,6 +716,15 @@ int  main( int argc, char **argv )
     }
     
     symTable.clear();
+    operatorCode["+"] = "add";
+    operatorCode["-"] = "sub";
+    operatorCode["*"] = "mul";
+    operatorCode["/"] = "div";
+    operatorCode["mod"] = "rem";
+    operatorCode["neg"] = "neg";
+    operatorCode["and"] = "and";
+    operatorCode["or"] = "or";
+    operatorCode["not"] = "xor";
 
     yyin = fp;
     yyparse();
