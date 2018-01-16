@@ -11,6 +11,7 @@ extern char arithCode[3];
 extern std::map<std::string, std::string> operatorCode;
 extern std::vector<int> labelStack;
 extern int nextLabelNo;
+extern FILE *yyoutput;
 
 void genCode(int add_indent, const char *fmt, ...);
 void genProgBegin();

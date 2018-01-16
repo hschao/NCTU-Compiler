@@ -13,6 +13,8 @@ extern int Opt_D;           /* declared in lex.l */
 string fileName;
 bool ignoreNextCompound = false;
 bool isParsingProgram = false;
+SymbolTableEntry func_invoke;
+int func_param_counter = 0;
 
 int yylex();
 int yyerror( const char *msg );
@@ -210,9 +212,6 @@ literal_constant
  | integer_constant { $$.typeID = T_INTEGER; $$.integer=$1; }
  | SCIENTIFIC { $$.typeID = T_REAL; $$.real=$1; }
  | FLOAT { $$.typeID = T_REAL; $$.real=$1; }
- | SUB integer_constant { $$.typeID = T_INTEGER; $$.integer=-$2; }
- | SUB SCIENTIFIC { $$.typeID = T_REAL; $$.real=-$2; }
- | SUB FLOAT { $$.typeID = T_REAL; $$.real=-$2; }
  | KW_TRUE { $$.typeID = T_BOOLEAN; $$.bl=$1; }
  | KW_FALSE { $$.typeID = T_BOOLEAN; $$.bl=$1; }
  ;
@@ -248,7 +247,7 @@ compound_statement
  ;
 
 simple_statement
- : variable_reference ASSIGN expression SEMICOLON {
+ : variable_reference ASSIGN boolean_expr SEMICOLON {
     char buf[300];
     if ($1.kind == K_PROG) {
         sprintf(buf, "'%s' is program", $1.name);
@@ -336,10 +335,23 @@ condition
  ;
 
 while_statement 
- : KW_WHILE boolean_expr {
-    if ($2.typeID != T_BOOLEAN)
-        semanticError("operand of while statement is not boolean type");
-   } KW_DO statements KW_END KW_DO
+ : KW_WHILE 
+    {
+        labelStack.push_back(nextLabelNo++);
+        genCode(0, "Lbegin_%d: ", labelStack.back());
+    }
+   boolean_expr 
+    {
+        if ($3.typeID != T_BOOLEAN)
+            semanticError("operand of while statement is not boolean type");
+        genCode(1, "ifeq Lexit_%d ", labelStack.back());
+    } 
+   KW_DO statements KW_END KW_DO
+    {
+        genCode(1, "goto Lbegin_%d ", labelStack.back());
+        genCode(0, "Lexit_%d: ", labelStack.back());
+        labelStack.pop_back();
+    }
  ;
 
 for_statement 
@@ -387,17 +399,28 @@ function_invocation_statement
 /* common grammar */
 expressions
  : empty { $$.clear(); }
- | expression_list { 
-    $$ = $1;
-   }
+ | { func_param_counter = 0; }
+   expression_list 
+   { $$ = $2; }
  ;
 
 expression_list
- : expression_list COMMA boolean_expr { $$=$1; $$.push_back( $3 ); }
- | boolean_expr { 
-    $$.clear();
-    $$.push_back($1); 
-   }
+ : expression_list COMMA boolean_expr
+    { 
+        $$=$1; 
+        $$.push_back($3);
+        if ($3.typeID == T_INTEGER && func_invoke.attr.paramLst[func_param_counter].typeID == T_REAL)
+            genI2F();
+        func_param_counter++;
+    }
+ | boolean_expr
+    { 
+        $$.clear();
+        $$.push_back($1); 
+        if ($1.typeID == T_INTEGER && func_invoke.attr.paramLst[func_param_counter].typeID == T_REAL)
+            genI2F();
+        func_param_counter++;
+    }
  ;
 
 boolean_expr
@@ -597,34 +620,40 @@ mul_op
  ;
 
 function_invocation
- : IDENT L_PAREN expressions R_PAREN { 
-    $$.typeID = T_ERROR;
-    SymbolTableEntry p = findFunction($1);
-    if (p.type.typeID != T_ERROR){
-        char buf[300];
-        if ($3.size() < p.attr.paramLst.size()) {
-            sprintf(buf, "too few arguments to function '%s'", $1);
-            semanticError(buf);
-        } else if ($3.size() > p.attr.paramLst.size()) {
-            sprintf(buf, "too many arguments to function '%s'", $1);
-            semanticError(buf);
-        } else {
-            bool allMatch = true;
-            for (int i=0; i<$3.size(); i++) {
-                if (p.attr.paramLst[i].acceptable($3[i]) != E_OK) {
-                    allMatch = false;
-                    semanticError("parameter type mismatch");
-                    break;
+ : IDENT 
+    {
+        func_invoke = findFunction($1);
+    }
+   L_PAREN expressions R_PAREN 
+    { 
+        $$.typeID = T_ERROR;
+        if (func_invoke.type.typeID != T_ERROR) {
+            char buf[300];
+            int argNum = $4.size();
+            int paramNum = func_invoke.attr.paramLst.size();
+            if (argNum < paramNum) {
+                sprintf(buf, "too few arguments to function '%s'", $1);
+                semanticError(buf);
+            } else if (argNum > paramNum) {
+                sprintf(buf, "too many arguments to function '%s'", $1);
+                semanticError(buf);
+            } else {
+                bool allMatch = true;
+                for (int i=0; i<argNum; i++) {
+                    if (func_invoke.attr.paramLst[i].acceptable($4[i]) != E_OK) {
+                        allMatch = false;
+                        semanticError("parameter type mismatch");
+                        break;
+                    }
                 }
-            }
 
-            if (allMatch) {
-                $$ = p.type;
-                genFuncInvoke(p);
+                if (allMatch) {
+                    $$ = func_invoke.type;
+                    genFuncInvoke(func_invoke);
+                }
             }
         }
     }
-   }
  ;
 
 variable_reference
@@ -733,8 +762,8 @@ string getFileName(string s) {
 
 int  main( int argc, char **argv )
 {
-    if( argc != 2 ) {
-        fprintf(  stdout,  "Usage:  ./parser  [filename]\n"  );
+    if( argc < 2 ) {
+        fprintf(  stdout,  "Usage:  ./parser  [input_filename] [output_filename]\n"  );
         exit(0);
     }
 
@@ -756,7 +785,10 @@ int  main( int argc, char **argv )
     operatorCode["or"] = "or";
     operatorCode["not"] = "xor";
 
+
     yyin = fp;
+    if (argc == 3)
+        yyoutput = fopen( argv[2], "w" );
     yyparse();
     // if (noError) {
     //     printf("|-------------------------------------------|\n");

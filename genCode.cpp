@@ -12,14 +12,15 @@ char arithCode[3] = {'i', 'f', 'i'};
 std::map<std::string, std::string> operatorCode;
 std::vector<int> labelStack;
 int nextLabelNo = 0;
+FILE *yyoutput = stdout;
 
 void genCode(int indent, const char *fmt, ...) { 
     va_list args;
     va_start (args, fmt);
     for (int i = 0; i < indent; ++i)
-        printf("\t");
-    vprintf (fmt, args);
-    printf ("\n");
+        fprintf(yyoutput, "\t");
+    vfprintf (yyoutput, fmt, args);
+    fprintf (yyoutput, "\n");
     va_end (args);
 }
 
